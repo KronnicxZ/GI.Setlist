@@ -156,7 +156,7 @@ const SongList = ({
 
       <div>
         {/* Desktop Table View */}
-        <div className="hidden md:block rounded-main border border-white/5 bg-white/[0.01] custom-scrollbar shadow-inner overflow-hidden">
+        <div className="hidden md:block rounded-main border border-white/5 bg-white/[0.01] custom-scrollbar shadow-inner overflow-hidden h-fit">
           <table className="min-w-full border-separate border-spacing-0">
             <thead>
               <tr className="text-left text-[11px] text-gray-400 uppercase tracking-widest bg-white/[0.04] backdrop-blur-md">

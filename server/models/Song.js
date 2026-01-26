@@ -9,7 +9,6 @@ const songSchema = new mongoose.Schema({
     key: String,
     originalKey: String,
     vocalistKey: String,
-    duration: String, // format "mm:ss"
     genre: String,
     youtubeUrl: String,
     createdAt: { type: Date, default: Date.now }

@@ -83,8 +83,7 @@ app.get('/api/youtube/details', async (req, res) => {
 
             res.json({
                 title: snippet.title,
-                channelTitle: snippet.channelTitle,
-                durationRaw: contentDetails.duration
+                channelTitle: snippet.channelTitle
             });
         } else {
             res.status(404).json({ error: 'Video not found' });
