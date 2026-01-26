@@ -467,7 +467,7 @@ function App() {
     <>
       {/* Eliminamos el loader de pantalla completa para dejar paso a los skeletons */}
 
-      <div className={`flex flex-col md:flex-row h-screen w-full bg-main text-white md:gap-4 overflow-hidden ${selectedSong ? 'hidden md:flex' : 'flex'}`}>
+      <div className="flex flex-col md:flex-row h-screen w-full bg-main text-white md:gap-4 overflow-hidden">
         {/* Desktop Sidebar */}
         <div className={`hidden md:flex flex-col h-screen sticky top-0 z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}>
           <button
@@ -563,7 +563,7 @@ function App() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+        <div className={`flex-1 flex flex-col h-full relative overflow-hidden ${selectedSong ? 'hidden md:flex' : 'flex'}`}>
 
           {/* Desktop Header */}
           <header className="hidden md:block sticky top-0 z-40 px-8 py-6 bg-main/80 backdrop-blur-md border-b border-white/5">
@@ -779,7 +779,7 @@ function App() {
           </main>
 
           {/* Mobile Bottom Navigation Bar */}
-          <div className="md:hidden fixed bottom-1 left-4 right-4 z-[100] bg-main/60 backdrop-blur-2xl border border-white/5 rounded-2xl px-1 py-1 mb-2 shadow-2xl">
+          <div className={`md:hidden fixed bottom-1 left-4 right-4 z-[100] bg-main/60 backdrop-blur-2xl border border-white/5 rounded-2xl px-1 py-1 mb-2 shadow-2xl ${selectedSong ? 'hidden' : 'block'}`}>
             <div className="flex justify-around items-center">
               <button
                 onClick={() => { setActiveTab('library'); setSelectedSong(null); }}
