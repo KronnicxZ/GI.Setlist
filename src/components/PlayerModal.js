@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReactPlayer from 'react-player/youtube';
+import ReactPlayer from 'react-player';
 import * as Tone from 'tone';
 import parse from 'html-react-parser';
 import * as Popover from '@radix-ui/react-popover';
