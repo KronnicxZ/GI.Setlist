@@ -232,13 +232,29 @@ const PlayerModal = ({ song, onClose }) => {
   const newKey = originalKeyIndex !== -1 ? NOTES[newKeyIndex] + (isMinor ? 'm' : '') : baseKey;
 
   return (
-    <div className={`fixed inset-0 bg-black md:bg-black/90 md:backdrop-blur-xl z-[150] overflow-y-auto overflow-x-hidden md:overflow-hidden animate-fade-in flex items-start md:items-center justify-center p-0 md:p-4 no-print`}>
-      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative overflow-x-hidden md:overflow-hidden flex flex-col md:flex-row min-h-full md:h-full md:max-h-[90vh]">
+    <div className={`fixed inset-0 bg-black md:bg-black/90 md:backdrop-blur-xl z-[150] overflow-hidden animate-fade-in flex items-start md:items-center justify-center p-0 md:p-4 no-print`}>
+      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative overflow-y-auto md:overflow-hidden flex flex-col md:flex-row h-full md:h-full md:max-h-[90vh] custom-scrollbar">
 
         <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
+        {/* Mobile Sticky Header */}
+        <div className="md:hidden sticky top-0 z-[60] bg-surface/95 backdrop-blur-xl p-6 pb-4 border-b border-white/5">
+          <button
+            onClick={onClose}
+            className="flex items-center space-x-2 text-gray-500 hover:text-white transition-colors mb-4 group"
+          >
+            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10">
+              <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
+            </div>
+            <span className="text-xs font-bold uppercase tracking-widest">Volver</span>
+          </button>
+          <h3 className="text-lg font-extrabold text-white mb-0.5 leading-tight">{song.title}</h3>
+          <p className="text-primary text-xs font-bold">{song.artist}</p>
+        </div>
+
         <div className="modal-sidebar w-full md:w-[380px] lg:w-[400px] flex flex-col border-b md:border-b-0 md:border-r border-white/5 relative bg-black/20 shrink-0 no-print">
-          <div className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md p-6 md:p-8 pb-4 md:static md:bg-transparent md:backdrop-blur-none border-b border-white/5 md:border-none">
+          {/* Desktop Static Header */}
+          <div className="hidden md:block p-6 md:p-8 pb-4">
             <button
               onClick={onClose}
               className="flex items-center space-x-2 text-gray-500 hover:text-white transition-colors mb-4 md:mb-8 group"
