@@ -231,7 +231,7 @@ const SongList = ({
         </div>
 
         {/* Mobile Card View */}
-        <div className="md:hidden flex flex-col space-y-3 w-full pb-4">
+        <div className="md:hidden flex flex-col space-y-3 w-full pb-8">
           {loading ? [...Array(6)].map((_, i) => (
             <div key={`m-sk-${i}`} className="bg-white/5 rounded-2xl p-4 animate-pulse h-[74px]"></div>
           )) : songs.length === 0 ? (

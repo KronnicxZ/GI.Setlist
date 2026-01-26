@@ -660,7 +660,7 @@ function App() {
           </div>
 
           {/* Mobile Screens Container */}
-          <main className="flex-1 w-full max-w-[1800px] mx-auto overflow-y-auto overflow-x-hidden pt-2 md:pt-8 px-4 md:px-8 custom-scrollbar pb-32 md:pb-8">
+          <main className="flex-1 w-full max-w-[1800px] mx-auto overflow-y-auto overflow-x-hidden pt-2 md:pt-8 px-4 md:px-8 custom-scrollbar pb-40 md:pb-8">
 
             {/* Mobile Tab: Library/Search (Hybrid) */}
             <div className={`${activeTab === 'library' || activeTab === 'search' || !selectedSong ? '' : 'hidden md:block'} animate-fade-in`}>
