@@ -350,7 +350,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
                       title="Encerrar texto seleccionado en [ ] (Ctrl + Shift + B)"
                     >
                       <span className="font-mono text-primary">[ ]</span>
-                      <span>Corchetes <span className="text-[8px] opacity-50 ml-1">Ctrl+Shift+B</span></span>
+                      <span>Corchetes <span className="hidden md:inline text-[8px] opacity-50 ml-1">Ctrl+Shift+B</span></span>
                     </button>
                     <button
                       type="button"
@@ -359,7 +359,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
                       title="Formatear automáticamente (Ctrl + Shift + F)"
                     >
                       <svg className="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="currentColor" d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C11.79,2 11.59,2.06 11.43,2.18L3.53,6.62C3.21,6.79 3,7.12 3,7.5V16.5Z" /></svg>
-                      <span>Auto-Formato <span className="text-[8px] opacity-70 ml-1">Ctrl+Shift+F</span></span>
+                      <span>Auto-Formato <span className="hidden md:inline text-[8px] opacity-70 ml-1">Ctrl+Shift+F</span></span>
                     </button>
                   </div>
                 </div>
