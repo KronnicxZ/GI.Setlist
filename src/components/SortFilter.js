@@ -36,11 +36,13 @@ const SortFilter = ({ onSortChange }) => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-10 px-4 text-left text-white bg-gray-900 border border-gray-800 rounded-lg hover:bg-gray-800 focus:outline-none focus:border-[#FBAE00] flex items-center justify-between"
+        className="w-full h-[42px] px-4 text-left text-white bg-white/5 border border-white/10 rounded-sub hover:bg-white/[0.08] focus:outline-none focus:border-primary/50 transition-all flex items-center justify-between"
       >
-        <span className="text-sm">Ordenar por: {selectedOption}</span>
-        <svg 
-          className={`w-4 h-4 transition-transform ${isOpen ? 'transform rotate-180' : ''}`}
+        <span className="text-xs font-semibold text-gray-400">
+          Ordenar: <span className="text-white ml-1">{selectedOption}</span>
+        </span>
+        <svg
+          className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${isOpen ? 'transform rotate-180' : ''}`}
           viewBox="0 0 20 20"
           fill="currentColor"
         >
@@ -49,15 +51,16 @@ const SortFilter = ({ onSortChange }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-gray-900 border border-gray-800 rounded-lg shadow-lg">
+        <div className="absolute z-[100] w-full mt-2 bg-card border border-white/10 rounded-sub shadow-2xl overflow-hidden translate-y-0 animate-fade-in backdrop-blur-xl">
           <div className="py-1">
             {options.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handleSelect(option)}
-                className={`w-full px-4 py-2 text-sm text-left hover:bg-gray-800 ${
-                  selectedOption === option.label ? 'text-[#FBAE00]' : 'text-white'
-                }`}
+                className={`w-full px-4 py-2.5 text-xs font-medium text-left transition-colors ${selectedOption === option.label
+                  ? 'text-primary bg-primary/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
               >
                 {option.label}
               </button>

@@ -9,18 +9,18 @@ export const extractYoutubeVideoId = (url) => {
 // Función para convertir la duración de YouTube (ISO 8601) a formato legible
 export const formatDuration = (duration) => {
   if (!duration) return '-';
-  
+
   // Convertir duración ISO 8601 a minutos y segundos
   const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-  
+
   if (!match) return '-';
-  
+
   const hours = (match[1] || '').replace('H', '');
   const minutes = (match[2] || '').replace('M', '');
   const seconds = (match[3] || '').replace('S', '');
 
   let result = '';
-  
+
   if (hours) {
     result += `${hours}:`;
     result += `${minutes.padStart(2, '0')}:`;
@@ -29,28 +29,37 @@ export const formatDuration = (duration) => {
   } else {
     result += '0:';
   }
-  
+
   result += seconds.padStart(2, '0');
-  
+
   return result;
 };
 
-// Función para obtener la duración del video
-export const getVideoDuration = async (videoId) => {
-  if (!videoId) return '-';
-  
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+// Función para obtener la información del video a través del proxy del backend
+export const getVideoDetails = async (videoId) => {
+  if (!videoId) return null;
+
   try {
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=contentDetails&key=${process.env.REACT_APP_YOUTUBE_API_KEY}`
-    );
+    const response = await fetch(`${API_URL}/youtube/details?videoId=${videoId}`);
     const data = await response.json();
-    
-    if (data.items && data.items.length > 0) {
-      return formatDuration(data.items[0].contentDetails.duration);
-    }
-    return '-';
+
+    if (data.error) throw new Error(data.error);
+
+    return {
+      title: data.title,
+      channelTitle: data.channelTitle,
+      duration: formatDuration(data.durationRaw)
+    };
   } catch (error) {
-    console.error('Error fetching video duration:', error);
-    return '-';
+    console.error('Error fetching video details via proxy:', error);
+    return null;
   }
-}; 
+};
+
+// Función para obtener solo la duración (usando la misma ruta de proxy)
+export const getVideoDuration = async (videoId) => {
+  const details = await getVideoDetails(videoId);
+  return details ? details.duration : '-';
+};

@@ -12,3 +12,13 @@ root.render(
     </AuthProvider>
   </React.StrictMode>
 );
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').then(registration => {
+      console.log('SW registrado con éxito: ', registration);
+    }).catch(registrationError => {
+      console.log('SW fallo en registro: ', registrationError);
+    });
+  });
+}

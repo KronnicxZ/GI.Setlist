@@ -8,16 +8,27 @@ export const AuthProvider = ({ children }) => {
     return localStorage.getItem('isAdmin') === 'true';
   });
 
-  const login = (password) => {
-    // Contraseña del administrador
-    const adminPassword = 'H8e5n14r19y251';
-    
-    if (password === adminPassword) {
-      setIsAdmin(true);
-      localStorage.setItem('isAdmin', 'true');
-      return true;
+  const login = async (password) => {
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsAdmin(true);
+        localStorage.setItem('isAdmin', 'true');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
