@@ -19,6 +19,21 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
     youtubeUrl: initialData?.youtubeUrl || ''
   });
 
+  // Efecto para formatear las letras si vienen en texto plano (con \n) en lugar de HTML
+  useEffect(() => {
+    if (initialData?.lyrics && !initialData.lyrics.includes('<p>') && !initialData.lyrics.includes('<div>')) {
+      const formatted = formatLyricsForQuill(initialData.lyrics)
+        .split('\n')
+        .map(line => {
+          const trimmed = line.trim();
+          if (trimmed === '') return '<p><br></p>';
+          return `<p>${line}</p>`;
+        })
+        .join('');
+      setFormData(prev => ({ ...prev, lyrics: formatted }));
+    }
+  }, [initialData]);
+
   const [loadingVideo, setLoadingVideo] = useState(false);
   const [videoId, setVideoId] = useState(extractYoutubeVideoId(initialData?.youtubeUrl));
   const [showGenreMenu, setShowGenreMenu] = useState(false);

@@ -165,7 +165,7 @@ const SongList = ({
 
       <div>
         {/* Desktop Table View */}
-        <div className="hidden md:block rounded-main border border-white/5 bg-white/[0.01] overflow-x-auto custom-scrollbar shadow-inner">
+        <div className="hidden md:block rounded-main border border-white/5 bg-white/[0.01] custom-scrollbar shadow-inner">
           <table className="min-w-full border-separate border-spacing-0">
             <thead>
               <tr className="text-left text-[11px] text-gray-400 uppercase tracking-widest bg-white/[0.03] glass">
@@ -196,7 +196,11 @@ const SongList = ({
                   {isAdmin && <td className="py-4 px-6 text-right"><div className="w-8 h-8 bg-white/5 rounded-lg ml-auto"></div></td>}
                 </tr>
               )) : songs.map((song) => (
-                <tr key={song.id || song._id} className="group hover:bg-white/[0.02] cursor-pointer" onClick={() => onSongSelect(song)}>
+                <tr
+                  key={song.id || song._id}
+                  className={`group hover:bg-white/[0.02] cursor-pointer relative ${openMenuId === (song.id || song._id) ? 'z-[60]' : 'z-10'}`}
+                  onClick={() => onSongSelect(song)}
+                >
                   {isAdmin && <td className="py-4 px-6 text-center" onClick={e => e.stopPropagation()}>
                     <button onClick={(e) => handleSelectSong(e, song.id || song._id)} className={`w-4 h-4 border-2 rounded ${selectedSongs.includes(song.id || song._id) ? 'bg-primary border-primary' : 'border-white/10'}`}>
                       {selectedSongs.includes(song.id || song._id) && <svg className="w-2.5 h-2.5 text-black" viewBox="0 0 24 24"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" /></svg>}
