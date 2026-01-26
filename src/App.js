@@ -432,7 +432,7 @@ function App() {
     <>
       {/* Eliminamos el loader de pantalla completa para dejar paso a los skeletons */}
 
-      <div className="flex flex-col md:flex-row min-h-screen bg-main text-white md:gap-4 overflow-x-hidden">
+      <div className="flex flex-col md:flex-row h-screen w-full bg-main text-white md:gap-4 overflow-hidden">
         {/* Desktop Sidebar */}
         <div className={`hidden md:flex flex-col h-screen sticky top-0 z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}>
           <button
@@ -528,7 +528,7 @@ function App() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-h-screen relative pb-32 md:pb-0 transition-all duration-300">
+        <div className="flex-1 flex flex-col h-full relative overflow-hidden transition-all duration-300">
 
           {/* Desktop Header */}
           <header className="hidden md:block sticky top-0 z-40 px-8 py-6 bg-main/80 backdrop-blur-md border-b border-white/5">
@@ -564,27 +564,82 @@ function App() {
             </div>
           </header>
 
-          {/* Genre Tabs Filter */}
-          <div className="px-4 md:px-8 mt-4 no-print">
-            <div className="max-w-[1800px] mx-auto flex items-center space-x-2 bg-white/5 p-1 rounded-xl w-full md:w-fit border border-white/5 overflow-x-auto no-scrollbar">
+          {/* Mobile Header (Consolidated) */}
+          <div className="md:hidden sticky top-0 z-50 bg-main/80 backdrop-blur-xl border-b border-white/5 pt-4 pb-2 px-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3">
+                <div
+                  className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 active:bg-primary/30 transition-colors"
+                  onClick={handleLogoClick}
+                >
+                  <img src="/favicon.png" alt="Logo" className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col">
+                  <h1 className="text-xl font-black truncate max-w-[200px] leading-tight">
+                    {activeTab === 'admin' ? 'Perfil' : activeTab === 'setlists' ? 'Setlists' : (selectedSetlist ? selectedSetlist.name : 'Biblioteca')}
+                  </h1>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">
+                    {activeTab === 'library' || activeTab === 'search' ? `${filteredSongs.length} temas` : 'Generación Indetenible'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                {activeTab === 'library' && (
+                  <button onClick={() => setActiveTab('search')} className="p-2 text-gray-400">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+                  </button>
+                )}
+                {isAdmin && (activeTab === 'library' || activeTab === 'setlists') && (
+                  <button
+                    onClick={() => {
+                      if (activeTab === 'library') { setEditingSong(null); setShowSongForm(true); }
+                      else { setEditingSetlist(null); setShowSetlistForm(true); }
+                    }}
+                    className="w-8 h-8 bg-primary text-black rounded-lg flex items-center justify-center"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Genre Tabs Filter - Moved into fixed header for mobile */}
+            {(activeTab === 'library' || activeTab === 'search') && (
+              <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar pb-2">
+                {['Todas', 'Alabanza', 'Adoración'].map(genre => {
+                  const normalize = (text) => text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                  const count = genre === 'Todas' ? songs.length : songs.filter(s => normalize(s.genre) === normalize(genre)).length;
+                  return (
+                    <button
+                      key={genre}
+                      onClick={() => setGenreFilter(genre)}
+                      className={`px-4 py-1.5 rounded-lg text-[10px] font-bold border transition-all shrink-0 ${genreFilter === genre ? 'bg-primary text-black border-primary' : 'text-gray-400 border-white/5 bg-white/5'}`}
+                    >
+                      {genre} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeTab === 'search' && (
+              <div className="pb-2 animate-fade-in"><SearchBar onSearch={setSearchTerm} /></div>
+            )}
+          </div>
+
+          {/* Genre Tabs Filter (Desktop Only now) */}
+          <div className="hidden md:block px-8 mt-4 no-print">
+            <div className="max-w-[1800px] mx-auto flex items-center space-x-2 bg-white/5 p-1 rounded-xl w-fit border border-white/5">
               {['Todas', 'Alabanza', 'Adoración'].map(genre => {
-                const normalize = (text) =>
-                  text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-                const count = genre === 'Todas'
-                  ? songs.length
-                  : songs.filter(s => normalize(s.genre) === normalize(genre)).length;
-
+                const normalize = (text) => text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const count = genre === 'Todas' ? songs.length : songs.filter(s => normalize(s.genre) === normalize(genre)).length;
                 return (
                   <button
                     key={genre}
                     onClick={() => setGenreFilter(genre)}
-                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${genreFilter === genre ? 'bg-primary text-black shadow-lg shadow-primary/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${genreFilter === genre ? 'bg-primary text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                   >
-                    <span>{genre}</span>
-                    <span className={`text-[10px] opacity-60 ${genreFilter === genre ? 'text-black font-black' : 'text-gray-500'}`}>
-                      ({count})
-                    </span>
+                    {genre} ({count})
                   </button>
                 );
               })}
@@ -592,34 +647,12 @@ function App() {
           </div>
 
           {/* Mobile Screens Container */}
-          <main className="flex-1 w-full max-w-[1800px] mx-auto overflow-x-hidden pt-4 md:pt-8 px-4 md:px-8">
+          <main className="flex-1 w-full max-w-[1800px] mx-auto overflow-y-auto overflow-x-hidden pt-2 md:pt-8 px-4 md:px-8 custom-scrollbar pb-32 md:pb-8">
 
             {/* Mobile Tab: Library/Search (Hybrid) */}
             <div className={`${activeTab === 'library' || activeTab === 'search' || !selectedSong ? '' : 'hidden md:block'} animate-fade-in`}>
 
-              {(activeTab === 'library' || activeTab === 'search') && (
-                <div className="md:hidden mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-3">
-                      {/* LOGO CON TOQUE SECRETO EN MOVIL */}
-                      <div
-                        className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20 active:bg-primary/30 transition-colors"
-                        onClick={handleLogoClick}
-                      >
-                        <img src="/favicon.png" alt="Logo" className="w-5 h-5" />
-                      </div>
-                      <h1 className="text-2xl font-black truncate max-w-[200px] sm:max-w-none">{selectedSetlist ? selectedSetlist.name : 'Biblioteca'}</h1>
-                    </div>
-                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{filteredSongs.length} temas</div>
-                  </div>
 
-                  {activeTab === 'search' && (
-                    <div className="mt-4 animate-slide-up">
-                      <SearchBar onSearch={setSearchTerm} />
-                    </div>
-                  )}
-                </div>
-              )}
 
               {(activeTab === 'library' || activeTab === 'search') && (
                 <SongList
@@ -640,7 +673,7 @@ function App() {
             </div>
 
             <div className={`${activeTab === 'setlists' ? 'block' : 'hidden'} md:hidden animate-fade-in pb-10`}>
-              <h1 className="text-3xl font-black mb-6">Setlists</h1>
+
               <div className="space-y-4">
                 <div onClick={() => { setSelectedSetlist(null); setActiveTab('library'); }} className={`p-5 rounded-sub flex items-center justify-between transition-all ${!selectedSetlist ? 'bg-primary/10 border-2 border-primary/20' : 'bg-white/5 border border-white/5'}`}>
                   <div className="flex items-center space-x-4">
@@ -680,7 +713,7 @@ function App() {
               <div className="w-24 h-24 bg-primary/10 rounded-main mx-auto flex items-center justify-center border border-primary/20 mb-6">
                 <svg className="w-12 h-12 text-primary" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
               </div>
-              <h1 className="text-3xl font-black mb-2">{isAdmin ? 'Administrador' : 'Visitante'}</h1>
+
               <p className="text-muted mb-10 text-sm">{isAdmin ? 'Tienes acceso total a la biblioteca' : 'Explora la biblioteca de música'}</p>
 
               <div className="space-y-4 px-6">
@@ -713,31 +746,29 @@ function App() {
           </main>
 
           {/* Mobile Bottom Navigation Bar */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-main/90 backdrop-blur-xl border-t border-white/5 pt-3 pb-6 px-4 overscroll-none">
-            <div className="flex justify-between items-center max-w-sm mx-auto">
-              <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center space-y-1 transform transition-all active:scale-90 ${activeTab === 'library' ? 'text-primary' : 'text-gray-500'}`}>
+          <div className="md:hidden fixed bottom-1 left-4 right-4 z-[100] bg-main/40 backdrop-blur-2xl border border-white/5 rounded-2xl p-2 mb-4 shadow-2xl overflow-hidden">
+            <div className="flex justify-around items-center">
+              <button
+                onClick={() => { setActiveTab('library'); setSelectedSong(null); }}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'library' ? 'text-primary bg-primary/10' : 'text-gray-500 hover:text-white'}`}
+              >
                 <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12,13A5,5 0 0,1 7,8H9A3,3 0 0,0 12,11A3,3 0 0,0 15,8H17A5,5 0 0,1 12,13M12,3A3,3 0 0,1 15,6H9A3,3 0 0,1 12,3M19,6H17A5,5 0 0,0 12,1A5,5 0 0,0 7,6H5C3.89,6 3,6.89 3,8V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V8C21,6.89 20.11,6 19,6Z" /></svg>
-                <span className="text-[10px] font-black uppercase tracking-tighter">Canciones</span>
+                <span className="text-[9px] font-bold mt-1">Inicio</span>
               </button>
-              <button onClick={() => setActiveTab('search')} className={`flex flex-col items-center space-y-1 transform transition-all active:scale-90 ${activeTab === 'search' ? 'text-primary' : 'text-gray-500'}`}>
-                <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
-                <span className="text-[10px] font-black uppercase tracking-tighter">Buscar</span>
-              </button>
-
-              {isAdmin && activeTab === 'library' && (
-                <button onClick={() => { setEditingSong(null); setShowSongForm(true); }} className="w-11 h-11 bg-primary text-black rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(251,174,0,0.4)] -mt-10 transform transition-all active:scale-90">
-                  <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></svg>
-                </button>
-              )}
-
-              <button onClick={() => setActiveTab('setlists')} className={`flex flex-col items-center space-y-1 transform transition-all active:scale-90 ${activeTab === 'setlists' ? 'text-primary' : 'text-gray-500'}`}>
+              <button
+                onClick={() => { setActiveTab('setlists'); setSelectedSong(null); }}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'setlists' ? 'text-primary bg-primary/10' : 'text-gray-500 hover:text-white'}`}
+              >
                 <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M15,6H3V8H15V6M15,10H3V12H15V10M3,16H11V14H3V16M17,6V14.18C16.69,14.07 16.35,14 16,14A3,3 0 0,0 13,17A3,3 0 0,0 16,20A3,3 0 0,0 19,17V8H22V6H17Z" /></svg>
-                <span className="text-[10px] font-black uppercase tracking-tighter">Setlist</span>
+                <span className="text-[9px] font-bold mt-1">Listas</span>
               </button>
               {isAdmin && (
-                <button onClick={() => setActiveTab('admin')} className={`flex flex-col items-center space-y-1 transform transition-all active:scale-90 ${activeTab === 'admin' ? 'text-primary' : 'text-gray-500'}`}>
+                <button
+                  onClick={() => { setActiveTab('admin'); setSelectedSong(null); }}
+                  className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'admin' ? 'text-primary bg-primary/10' : 'text-gray-500 hover:text-white'}`}
+                >
                   <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
-                  <span className="text-[10px] font-black uppercase tracking-tighter">Perfil</span>
+                  <span className="text-[9px] font-bold mt-1">Perfil</span>
                 </button>
               )}
             </div>
