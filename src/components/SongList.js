@@ -165,10 +165,10 @@ const SongList = ({
 
       <div>
         {/* Desktop Table View */}
-        <div className="hidden md:block rounded-main border border-white/5 bg-white/[0.01] custom-scrollbar shadow-inner">
+        <div className="hidden md:block rounded-main border border-white/5 bg-white/[0.01] custom-scrollbar shadow-inner overflow-hidden">
           <table className="min-w-full border-separate border-spacing-0">
             <thead>
-              <tr className="text-left text-[11px] text-gray-400 uppercase tracking-widest bg-white/[0.03] glass">
+              <tr className="text-left text-[11px] text-gray-400 uppercase tracking-widest bg-white/[0.04] backdrop-blur-md">
                 {isAdmin && <th className="py-5 px-6 font-bold w-12 border-b border-white/5 text-center">
                   <button onClick={() => setSelectedSongs(selectedSongs.length === songs.length ? [] : songs.map(s => s.id || s._id))} className={`w-4 h-4 border-2 rounded transition-all inline-flex items-center justify-center ${selectedSongs.length === songs.length && songs.length > 0 ? 'bg-primary border-primary' : 'border-white/10'}`}>
                     {selectedSongs.length === songs.length && songs.length > 0 && <svg className="w-2.5 h-2.5 text-black" viewBox="0 0 24 24"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" /></svg>}
@@ -218,6 +218,12 @@ const SongList = ({
                   </td>}
                 </tr>
               ))}
+              {/* Espaciador para que el menú de la última fila no se corte */}
+              {songs.length > 0 && (
+                <tr className="h-32 pointer-events-none">
+                  <td colSpan={isAdmin ? 8 : 6}></td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
