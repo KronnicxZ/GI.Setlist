@@ -47,10 +47,12 @@ function App() {
 
   const { isAdmin, logout } = useAuth();
 
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  const API_URL = process.env.REACT_APP_API_URL ||
+    (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api');
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log('Fetching from API_URL:', API_URL);
       try {
         setLoading(true);
         const [songsRes, setlistsRes] = await Promise.all([
@@ -59,12 +61,14 @@ function App() {
         ]);
 
         if (!songsRes.ok || !setlistsRes.ok) {
+          console.error('API Response not OK:', songsRes.status, setlistsRes.status);
           throw new Error('Error en la respuesta del servidor');
         }
 
         const songsData = await songsRes.json();
         const setlistsData = await setlistsRes.json();
 
+        console.log('Fetched songs:', songsData.length);
         if (Array.isArray(songsData)) {
           setSongs(songsData.map(s => ({ ...s, id: s._id })));
         }

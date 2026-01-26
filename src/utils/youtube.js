@@ -35,7 +35,8 @@ export const formatDuration = (duration) => {
   return result;
 };
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL ||
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api');
 
 // Función para obtener la información del video a través del proxy del backend
 export const getVideoDetails = async (videoId) => {

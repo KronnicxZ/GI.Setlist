@@ -6,9 +6,10 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
   const { login } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (login(password)) {
+    const success = await login(password);
+    if (success) {
       onClose();
     } else {
       setError('Contraseña incorrecta');
