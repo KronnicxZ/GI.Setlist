@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import SongList from './components/SongList';
 import SearchBar from './components/SearchBar';
 import SongForm from './components/SongForm';
@@ -12,9 +12,7 @@ import DuplicateModal from './components/DuplicateModal';
 import AdminPanel from './components/AdminPanel';
 import CustomAlert from './components/CustomAlert';
 import { useAuth } from './context/AuthContext';
-
-const normalizeStr = (text) =>
-  text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+import { extractYoutubeVideoId } from './utils/youtube';
 
 function App() {
   const [songs, setSongs] = useState([]);
@@ -112,7 +110,7 @@ function App() {
     return () => clearTimeout(timer);
   }, [logoClicks]);
 
-  const currentSongsSource = useMemo(() => {
+  const contextSongs = React.useMemo(() => {
     if (!selectedSetlist) return songs;
     return songs.filter(song => selectedSetlist.songs.some(s => {
       const sId = s.id || s._id || s;
@@ -120,17 +118,21 @@ function App() {
     }));
   }, [songs, selectedSetlist]);
 
-  const filteredSongs = useMemo(() => {
-    const list = currentSongsSource.filter(song => {
+  const filteredSongs = React.useMemo(() => {
+    const list = contextSongs.filter(song => {
       // Aplicar búsqueda por texto
       const title = song.title || '';
       const artist = song.artist || '';
       const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         artist.toLowerCase().includes(searchTerm.toLowerCase());
 
+      // Helper para normalizar texto (quitar acentos)
+      const normalize = (text) =>
+        text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
       // Aplicar filtro de género (normalizado para ignorar acentos y mayúsculas)
       const matchesGenre = genreFilter === 'Todas' ||
-        normalizeStr(song.genre) === normalizeStr(genreFilter);
+        normalize(song.genre) === normalize(genreFilter);
 
       return matchesSearch && matchesGenre;
     });
@@ -159,7 +161,7 @@ function App() {
           return idB.toString().localeCompare(idA.toString());
       }
     });
-  }, [currentSongsSource, searchTerm, genreFilter, sortBy]);
+  }, [contextSongs, searchTerm, genreFilter, sortBy]);
 
   if (loading) {
     return (
@@ -403,7 +405,7 @@ function App() {
   };
 
   const confirmRestore = async () => {
-    const { file } = restoreAlert;
+    const { file, event } = restoreAlert;
     setRestoreAlert({ isOpen: false, file: null, event: null });
 
     try {
@@ -620,7 +622,8 @@ function App() {
             {(activeTab === 'library' || activeTab === 'search') && (
               <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar pb-2">
                 {['Todas', 'Alabanza', 'Adoración'].map(genre => {
-                  const count = genre === 'Todas' ? currentSongsSource.length : currentSongsSource.filter(s => normalizeStr(s.genre) === normalizeStr(genre)).length;
+                  const normalize = (text) => text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                  const count = genre === 'Todas' ? contextSongs.length : contextSongs.filter(s => normalize(s.genre) === normalize(genre)).length;
                   return (
                     <button
                       key={genre}
@@ -643,7 +646,8 @@ function App() {
           <div className="hidden md:block px-8 mt-4 no-print">
             <div className="max-w-[1800px] mx-auto flex items-center space-x-2 bg-white/5 p-1 rounded-xl w-fit border border-white/5">
               {['Todas', 'Alabanza', 'Adoración'].map(genre => {
-                const count = genre === 'Todas' ? currentSongsSource.length : currentSongsSource.filter(s => normalizeStr(s.genre) === normalizeStr(genre)).length;
+                const normalize = (text) => text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const count = genre === 'Todas' ? contextSongs.length : contextSongs.filter(s => normalize(s.genre) === normalize(genre)).length;
                 return (
                   <button
                     key={genre}
