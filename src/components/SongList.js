@@ -86,6 +86,7 @@ const SongList = ({
 }) => {
   const [selectedSongs, setSelectedSongs] = useState([]);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [isBulkSetlistOpen, setIsBulkSetlistOpen] = useState(false);
   const { isAdmin } = useAuth();
 
 
@@ -93,6 +94,9 @@ const SongList = ({
     const handleClickOutside = (event) => {
       if (!event.target.closest('.song-menu-container')) {
         setOpenMenuId(null);
+      }
+      if (!event.target.closest('.bulk-setlist-container')) {
+        setIsBulkSetlistOpen(false);
       }
     };
     document.addEventListener('click', handleClickOutside);
@@ -132,26 +136,30 @@ const SongList = ({
           </div>
           <div className="flex items-center space-x-3">
             {!isRemovingFromSetlist && setlists && setlists.length > 0 && (
-              <div className="relative group/setlist">
-                <button className="flex items-center space-x-2 px-4 py-2 text-xs md:text-sm font-bold text-white bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-lg transition-all">
+              <div className="relative bulk-setlist-container">
+                <button
+                  onClick={() => setIsBulkSetlistOpen(!isBulkSetlistOpen)}
+                  className={`flex items-center space-x-2 px-4 py-2 text-xs md:text-sm font-bold border rounded-lg transition-all ${isBulkSetlistOpen ? 'bg-primary text-black border-primary' : 'text-white bg-primary/20 hover:bg-primary/30 border-primary/30'}`}
+                >
                   <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
                   <span className="hidden sm:inline">Añadir a Setlist</span>
                 </button>
-                <div className="absolute right-0 mt-2 w-56 py-2 bg-[#0a0a0a] border border-white/10 rounded-sub shadow-2xl invisible group-hover/setlist:visible z-[100] animate-fade-in backdrop-blur-3xl">
-                  <div className="px-4 py-2 border-b border-white/5 mb-1">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Seleccionar Setlist</span>
+                {isBulkSetlistOpen && (
+                  <div className="absolute right-0 mt-2 w-56 py-2 bg-[#0a0a0a] border border-white/10 rounded-sub shadow-2xl z-[100] animate-fade-in backdrop-blur-3xl">
+                    <div className="px-4 py-2 border-b border-white/5 mb-1">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Seleccionar Setlist</span>
+                    </div>
+                    {setlists.map(setlist => (
+                      <button
+                        key={setlist.id || setlist._id}
+                        onClick={() => { onAddToSetlist(selectedSongs, setlist.id || setlist._id); setSelectedSongs([]); setIsBulkSetlistOpen(false); }}
+                        className="w-full px-4 py-2.5 text-left text-xs font-bold text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-between group/item"
+                      >
+                        <span>{setlist.name}</span>
+                        <svg className="w-4 h-4 opacity-0 group-hover/item:opacity-100 transition-opacity" viewBox="0 0 24 24"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></svg>
+                      </button>
+                    ))}
                   </div>
-                  {setlists.map(setlist => (
-                    <button
-                      key={setlist.id || setlist._id}
-                      onClick={() => { onAddToSetlist(selectedSongs, setlist.id || setlist._id); setSelectedSongs([]); }}
-                      className="w-full px-4 py-2.5 text-left text-xs font-bold text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-between group/item"
-                    >
-                      <span>{setlist.name}</span>
-                      <svg className="w-4 h-4 opacity-0 group-hover/item:opacity-100 transition-opacity" viewBox="0 0 24 24"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></svg>
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
             <button
