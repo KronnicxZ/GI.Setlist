@@ -182,8 +182,8 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-surface border border-white/10 rounded-main w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative">
+    <div className="fixed inset-0 bg-black/80 md:backdrop-blur-md z-[250] flex items-center justify-center p-0 md:p-4 animate-fade-in">
+      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-3xl h-full md:h-auto md:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative">
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
 
         <div className="relative py-5 px-8 border-b border-white/5 flex justify-between items-center">
