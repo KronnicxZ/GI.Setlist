@@ -12,7 +12,6 @@ import DuplicateModal from './components/DuplicateModal';
 import AdminPanel from './components/AdminPanel';
 import CustomAlert from './components/CustomAlert';
 import { useAuth } from './context/AuthContext';
-import { extractYoutubeVideoId } from './utils/youtube';
 
 const normalizeStr = (text) =>
   text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -404,7 +403,7 @@ function App() {
   };
 
   const confirmRestore = async () => {
-    const { file, event } = restoreAlert;
+    const { file } = restoreAlert;
     setRestoreAlert({ isOpen: false, file: null, event: null });
 
     try {
