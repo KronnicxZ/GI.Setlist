@@ -528,7 +528,7 @@ function App() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col h-full relative overflow-hidden transition-all duration-300">
+        <div className="flex-1 flex flex-col h-full relative overflow-hidden">
 
           {/* Desktop Header */}
           <header className="hidden md:block sticky top-0 z-40 px-8 py-6 bg-main/80 backdrop-blur-md border-b border-white/5">
