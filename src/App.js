@@ -594,26 +594,24 @@ function App() {
           {/* Mobile Header (Consolidated) */}
           <div className="md:hidden sticky top-0 z-50 bg-main/80 backdrop-blur-xl border-b border-white/5 pt-4 pb-2 px-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
                 <div
-                  className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 active:bg-primary/30 transition-colors"
+                  className="w-10 h-10 bg-[#161616] rounded-xl flex items-center justify-center border border-primary/20 active:bg-primary/30 transition-colors shadow-lg"
                   onClick={handleLogoClick}
                 >
                   <img src="/favicon.png" alt="Logo" className="w-6 h-6" />
                 </div>
-                <div className="flex flex-col">
-                  <h1 className="text-xl font-black truncate max-w-[200px] leading-tight">
-                    {activeTab === 'admin' ? 'Perfil' : activeTab === 'setlists' ? 'Setlists' : (selectedSetlist ? selectedSetlist.name : 'Biblioteca')}
+                <div className="flex items-center">
+                  <h1 className="text-xl font-black tracking-tighter flex items-center">
+                    <span className="text-white">GI</span>
+                    <span className="text-primary ml-1.5 line-clamp-1">{activeTab === 'admin' ? 'Perfil' : activeTab === 'setlists' ? 'Setlists' : activeTab === 'search' ? 'Buscador' : (selectedSetlist ? selectedSetlist.name : 'Setlist')}</span>
                   </h1>
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">
-                    {activeTab === 'library' || activeTab === 'search' ? `${filteredSongs.length} temas` : 'Generación Indetenible'}
-                  </span>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                {activeTab === 'library' && (
-                  <button onClick={() => setActiveTab('search')} className="p-2 text-gray-400">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+                {activeTab === 'search' && (
+                  <button onClick={() => setActiveTab('library')} className="p-2 text-primary">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
                   </button>
                 )}
                 {isAdmin && (activeTab === 'library' || activeTab === 'setlists') && (
@@ -773,29 +771,36 @@ function App() {
           </main>
 
           {/* Mobile Bottom Navigation Bar */}
-          <div className="md:hidden fixed bottom-1 left-4 right-4 z-[100] bg-main/40 backdrop-blur-2xl border border-white/5 rounded-2xl p-2 mb-4 shadow-2xl overflow-hidden">
+          <div className="md:hidden fixed bottom-1 left-4 right-4 z-[100] bg-main/60 backdrop-blur-2xl border border-white/5 rounded-2xl px-1 py-1 mb-2 shadow-2xl">
             <div className="flex justify-around items-center">
               <button
                 onClick={() => { setActiveTab('library'); setSelectedSong(null); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'library' ? 'text-primary bg-primary/10' : 'text-gray-500 hover:text-white'}`}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'library' ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
               >
-                <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12,13A5,5 0 0,1 7,8H9A3,3 0 0,0 12,11A3,3 0 0,0 15,8H17A5,5 0 0,1 12,13M12,3A3,3 0 0,1 15,6H9A3,3 0 0,1 12,3M19,6H17A5,5 0 0,0 12,1A5,5 0 0,0 7,6H5C3.89,6 3,6.89 3,8V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V8C21,6.89 20.11,6 19,6Z" /></svg>
-                <span className="text-[9px] font-bold mt-1">Inicio</span>
+                <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12,13A5,5 0 0,1 7,8H9A3,3 0 0,0 12,11A3,3 0 0,0 15,8H17A5,5 0 0,1 12,13M12,3A3,3 0 0,1 15,6H9A3,3 0 0,1 12,3M19,6H17A5,5 0 0,0 12,1A5,5 0 0,0 7,6H5C3.89,6 3,6.89 3,8V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V8C21,6.89 20.11,6 19,6Z" /></svg>
+                <span className="text-[8px] font-bold mt-0.5">Inicio</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab('search'); setSelectedSong(null); }}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'search' ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+                <span className="text-[8px] font-bold mt-0.5">Buscar</span>
               </button>
               <button
                 onClick={() => { setActiveTab('setlists'); setSelectedSong(null); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'setlists' ? 'text-primary bg-primary/10' : 'text-gray-500 hover:text-white'}`}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'setlists' ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
               >
-                <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M15,6H3V8H15V6M15,10H3V12H15V10M3,16H11V14H3V16M17,6V14.18C16.69,14.07 16.35,14 16,14A3,3 0 0,0 13,17A3,3 0 0,0 16,20A3,3 0 0,0 19,17V8H22V6H17Z" /></svg>
-                <span className="text-[9px] font-bold mt-1">Listas</span>
+                <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M15,6H3V8H15V6M15,10H3V12H15V10M3,16H11V14H3V16M17,6V14.18C16.69,14.07 16.35,14 16,14A3,3 0 0,0 13,17A3,3 0 0,0 16,20A3,3 0 0,0 19,17V8H22V6H17Z" /></svg>
+                <span className="text-[8px] font-bold mt-0.5">Listas</span>
               </button>
               {isAdmin && (
                 <button
                   onClick={() => { setActiveTab('admin'); setSelectedSong(null); }}
-                  className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'admin' ? 'text-primary bg-primary/10' : 'text-gray-500 hover:text-white'}`}
+                  className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'admin' ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
                 >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
-                  <span className="text-[9px] font-bold mt-1">Perfil</span>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+                  <span className="text-[8px] font-bold mt-0.5">Perfil</span>
                 </button>
               )}
             </div>
