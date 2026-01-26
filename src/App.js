@@ -110,14 +110,16 @@ function App() {
     return () => clearTimeout(timer);
   }, [logoClicks]);
 
+  const currentSongsSource = React.useMemo(() => {
+    if (!selectedSetlist) return songs;
+    return songs.filter(song => selectedSetlist.songs.some(s => {
+      const sId = s.id || s._id || s;
+      return sId === song.id || sId === song._id;
+    }));
+  }, [songs, selectedSetlist]);
+
   const filteredSongs = React.useMemo(() => {
-    const list = (selectedSetlist
-      ? songs.filter(song => selectedSetlist.songs.some(s => {
-        const sId = s.id || s._id || s;
-        return sId === song.id || sId === song._id;
-      }))
-      : songs
-    ).filter(song => {
+    const list = currentSongsSource.filter(song => {
       // Aplicar búsqueda por texto
       const title = song.title || '';
       const artist = song.artist || '';
@@ -159,7 +161,7 @@ function App() {
           return idB.toString().localeCompare(idA.toString());
       }
     });
-  }, [songs, selectedSetlist, searchTerm, genreFilter, sortBy]);
+  }, [currentSongsSource, searchTerm, genreFilter, sortBy]);
 
   if (loading) {
     return (
@@ -621,7 +623,7 @@ function App() {
               <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar pb-2">
                 {['Todas', 'Alabanza', 'Adoración'].map(genre => {
                   const normalize = (text) => text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                  const count = genre === 'Todas' ? songs.length : songs.filter(s => normalize(s.genre) === normalize(genre)).length;
+                  const count = genre === 'Todas' ? currentSongsSource.length : currentSongsSource.filter(s => normalize(s.genre) === normalize(genre)).length;
                   return (
                     <button
                       key={genre}
@@ -645,7 +647,7 @@ function App() {
             <div className="max-w-[1800px] mx-auto flex items-center space-x-2 bg-white/5 p-1 rounded-xl w-fit border border-white/5">
               {['Todas', 'Alabanza', 'Adoración'].map(genre => {
                 const normalize = (text) => text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                const count = genre === 'Todas' ? songs.length : songs.filter(s => normalize(s.genre) === normalize(genre)).length;
+                const count = genre === 'Todas' ? currentSongsSource.length : currentSongsSource.filter(s => normalize(s.genre) === normalize(genre)).length;
                 return (
                   <button
                     key={genre}
