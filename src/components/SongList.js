@@ -48,7 +48,7 @@ const SongCard = memo(({
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-0.5">
           <h3 className="font-bold text-sm text-white truncate pr-2">{song.title}</h3>
-          <span className="text-[9px] font-black text-primary px-1.5 py-0.5 bg-primary/10 rounded uppercase leading-none">{song.key || '-'}</span>
+          <span className="text-[9px] font-black text-primary px-1.5 py-0.5 bg-primary/10 rounded leading-none">{song.key || '-'}</span>
         </div>
         <div className="flex items-center justify-between">
           <p className="text-[11px] text-gray-500 truncate pr-2">{song.artist || 'Artista desconocido'}</p>
