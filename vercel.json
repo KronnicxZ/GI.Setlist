@@ -16,27 +16,15 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/server.js"
+      "dest": "/server/server.js"
     },
     {
       "src": "/static/(.*)",
       "dest": "/static/$1"
     },
     {
-      "src": "/favicon.png",
-      "dest": "/favicon.png"
-    },
-    {
-      "src": "/gi-logo.png",
-      "dest": "/gi-logo.png"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/manifest.json"
-    },
-    {
-      "src": "/service-worker.js",
-      "dest": "/service-worker.js"
+      "src": "/(favicon.png|gi-logo.png|manifest.json|service-worker.js)",
+      "dest": "/$1"
     },
     {
       "src": "/(.*)",
