@@ -93,6 +93,18 @@ code {
   border: 1px solid var(--border-subtle);
 }
 
+.song-card-optimized {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 80px;
+  /* Estimate of card height */
+}
+
+/* Specific optimization for mobile cards to avoid blur when scrolling */
+.mobile-card {
+  background: rgba(255, 255, 255, 0.04);
+  /* Removed backdrop-filter for performance */
+}
+
 /* Custom animations */
 @keyframes fadeIn {
   from {
