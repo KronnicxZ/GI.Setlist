@@ -26,8 +26,5 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "REACT_APP_BIBLE_API_KEY": "@react_app_bible_api_key"
-  }
-} 
+  ]
+}
