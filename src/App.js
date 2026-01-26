@@ -13,7 +13,6 @@ import AdminPanel from './components/AdminPanel';
 import CustomAlert from './components/CustomAlert';
 import { useAuth } from './context/AuthContext';
 import { extractYoutubeVideoId, getVideoDuration } from './utils/youtube';
-import Lenis from '@studio-freight/lenis';
 
 function App() {
   const [songs, setSongs] = useState([]);
@@ -139,32 +138,6 @@ function App() {
     const timer = setTimeout(() => setLogoClicks(0), 3000); // Reset cada 3 seg
     return () => clearTimeout(timer);
   }, [logoClicks]);
-
-  // Smooth Scroll con Lenis
-  useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      smoothTouch: false, // Desactivado en táctil para mantener inercia nativa
-      touchMultiplier: 2,
-      infinite: false,
-    });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-
-    requestAnimationFrame(raf);
-
-    return () => {
-      lenis.destroy();
-    };
-  }, []);
 
   if (loading) {
     return (
