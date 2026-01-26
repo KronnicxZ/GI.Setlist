@@ -238,7 +238,7 @@ const PlayerModal = ({ song, onClose }) => {
         <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
         <div className="modal-sidebar w-full md:w-[380px] lg:w-[400px] flex flex-col border-b md:border-b-0 md:border-r border-white/5 relative bg-black/20 shrink-0 no-print">
-          <div className="p-6 md:p-8 pb-4">
+          <div className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md p-6 md:p-8 pb-4 md:static md:bg-transparent md:backdrop-blur-none border-b border-white/5 md:border-none">
             <button
               onClick={onClose}
               className="flex items-center space-x-2 text-gray-500 hover:text-white transition-colors mb-4 md:mb-8 group"
@@ -444,7 +444,7 @@ const PlayerModal = ({ song, onClose }) => {
               </div>
             </div>
           </div>
-          <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between sticky top-0 bg-surface/80 backdrop-blur-md z-10 no-print">
+          <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between md:sticky top-0 bg-surface/80 md:backdrop-blur-md z-10 no-print">
             <h4 className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] md:tracking-[0.3em]">Letra y Acordes</h4>
             <div className="flex items-center space-x-3 md:space-x-4">
               <button
