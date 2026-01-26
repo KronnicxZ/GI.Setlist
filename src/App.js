@@ -405,7 +405,7 @@ function App() {
   };
 
   const confirmRestore = async () => {
-    const { file, event } = restoreAlert;
+    const { file } = restoreAlert;
     setRestoreAlert({ isOpen: false, file: null, event: null });
 
     try {
