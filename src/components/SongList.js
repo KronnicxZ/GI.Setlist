@@ -115,7 +115,7 @@ const SongList = ({
     <div className="space-y-4">
       {/* Barra de acciones masivas */}
       {selectedSongs.length > 0 && isAdmin && (
-        <div className="sticky top-20 md:top-24 z-30 bg-primary px-4 md:px-6 py-3 rounded-sub flex items-center justify-between shadow-2xl animate-fade-in mx-1 md:mx-0">
+        <div className="relative z-10 bg-primary px-4 md:px-6 py-3 rounded-xl flex items-center justify-between shadow-lg animate-fade-in mx-1 md:mx-0 mb-4 border border-black/10">
           <div className="flex items-center space-x-3">
             <span className="text-black font-black text-xs md:text-sm uppercase tracking-wider">{selectedSongs.length} <span className="hidden xs:inline">seleccionados</span></span>
             <div className="h-4 w-px bg-black/20"></div>
