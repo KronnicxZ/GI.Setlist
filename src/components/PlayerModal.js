@@ -233,7 +233,7 @@ const PlayerModal = ({ song, onClose }) => {
 
   return (
     <div className={`fixed inset-0 bg-black md:bg-black/90 md:backdrop-blur-xl z-[150] overflow-y-auto md:overflow-hidden animate-fade-in flex items-start md:items-center justify-center p-0 md:p-4 no-print`}>
-      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative overflow-hidden flex flex-col md:flex-row h-full md:h-full md:max-h-[90vh]">
+      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative md:overflow-hidden flex flex-col md:flex-row min-h-full md:h-full md:max-h-[90vh]">
 
         <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
