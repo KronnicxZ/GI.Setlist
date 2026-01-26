@@ -270,7 +270,7 @@ const PlayerModal = ({ song, onClose }) => {
             <p className="text-primary text-sm font-bold">{song.artist}</p>
           </div>
 
-          <div className="p-6 md:p-8 pt-0 space-y-6 md:space-y-8 overflow-y-visible md:overflow-y-auto custom-scrollbar">
+          <div className="p-6 md:p-8 pt-6 md:pt-0 space-y-6 md:space-y-8 overflow-y-visible md:overflow-y-auto custom-scrollbar">
             {videoId ? (
               <div className="rounded-sub overflow-hidden shadow-2xl bg-black border border-white/5 aspect-video relative group cursor-pointer" onClick={() => setShowVideo(true)}>
                 {!showVideo ? (
