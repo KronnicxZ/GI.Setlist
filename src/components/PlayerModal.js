@@ -182,16 +182,21 @@ const PlayerModal = ({ song, onClose }) => {
     <div className="fixed inset-0 bg-black/95 z-[150] overflow-y-auto md:overflow-hidden flex items-start md:items-center justify-center p-0 md:p-4 animate-fade-in">
       <div className="bg-surface md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative overflow-hidden flex flex-col md:flex-row h-auto md:h-[90vh]">
 
-        {/* PLAYER INVISIBLE (YouTube Engine) */}
-        <div className="hidden">
+        {/* PLAYER ENGINE (Hidden but active) */}
+        <div className="sr-only">
           <ReactPlayer
             ref={playerRef}
             url={song.youtubeUrl}
             playing={playerPlaying}
             onProgress={handleProgress}
             onDuration={handleDuration}
-            width="0"
-            height="0"
+            width="1px"
+            height="1px"
+            config={{
+              youtube: {
+                playerVars: { showinfo: 0, rel: 0, modestbranding: 1 }
+              }
+            }}
           />
         </div>
 
