@@ -19,7 +19,7 @@ const SongCard = memo(({
   return (
     <div
       onClick={() => onSongSelect(song)}
-      className={`flex items-center space-x-3 p-3 rounded-2xl border transition-transform duration-200 active:scale-[0.97] will-change-transform song-card-optimized ${isSelected ? 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/5' : 'bg-white/[0.04] border-white/5'
+      className={`flex items-center space-x-3 p-3 rounded-2xl border transition-all duration-200 active:scale-[0.97] will-change-transform ${isOpen ? 'z-[100] relative' : 'song-card-optimized relative'} ${isSelected ? 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/5' : 'bg-white/[0.04] border-white/5'
         }`}
     >
       {isAdmin && (
