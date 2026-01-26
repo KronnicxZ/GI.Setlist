@@ -16,8 +16,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
     originalKey: initialData?.originalKey || '',
     vocalistKey: initialData?.vocalistKey || '',
     genre: initialData?.genre || '',
-    youtubeUrl: initialData?.youtubeUrl || '',
-    duration: initialData?.duration || ''
+    youtubeUrl: initialData?.youtubeUrl || ''
   });
 
   // Efecto para formatear las letras si vienen en texto plano (con \n) en lugar de HTML
@@ -112,8 +111,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
           setFormData(prev => ({
             ...prev,
             title: prev.title || title,
-            artist: prev.artist || artist,
-            duration: details.duration
+            artist: prev.artist || artist
           }));
         }
         setLoadingVideo(false);

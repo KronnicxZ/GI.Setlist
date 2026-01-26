@@ -9,7 +9,6 @@ const SongCard = memo(({
   isAdmin,
   isSelected,
   onSelectSong,
-  duration,
   isOpen,
   onMenuToggle,
   onEdit,
@@ -53,9 +52,6 @@ const SongCard = memo(({
         </div>
         <div className="flex items-center justify-between">
           <p className="text-[11px] text-gray-500 truncate pr-2">{song.artist || 'Artista desconocido'}</p>
-          <div className="flex items-center space-x-2 shrink-0">
-            <span className="text-[9px] font-mono text-gray-400">{duration}</span>
-          </div>
         </div>
       </div>
       {isAdmin && (
@@ -174,7 +170,6 @@ const SongList = ({
                 <th className="py-5 px-6 font-bold border-b border-white/5 hidden lg:table-cell">Género</th>
                 <th className="py-5 px-6 font-bold border-b border-white/5">BPM</th>
                 <th className="py-5 px-6 font-bold border-b border-white/5 text-center">Tono</th>
-                <th className="py-5 px-6 font-bold border-b border-white/5 text-right">Duración</th>
                 {isAdmin && <th className="py-5 px-6 font-bold border-b border-white/5 w-16"></th>}
               </tr>
             </thead>
@@ -187,7 +182,6 @@ const SongList = ({
                   <td className="py-4 px-6 hidden lg:table-cell"><div className="w-16 h-4 bg-white/5 rounded-full"></div></td>
                   <td className="py-4 px-6"><div className="w-8 h-3 bg-white/5 rounded-full"></div></td>
                   <td className="py-4 px-6 text-center"><div className="w-6 h-4 bg-white/5 rounded mx-auto"></div></td>
-                  <td className="py-4 px-6 text-right"><div className="w-10 h-3 bg-white/5 rounded-full ml-auto"></div></td>
                   {isAdmin && <td className="py-4 px-6 text-right"><div className="w-8 h-8 bg-white/5 rounded-lg ml-auto"></div></td>}
                 </tr>
               )) : songs.map((song) => (
@@ -206,19 +200,12 @@ const SongList = ({
                   <td className="py-4 px-6 hidden lg:table-cell text-[10px] uppercase font-bold text-gray-500">{song.genre || '-'}</td>
                   <td className="py-4 px-6 text-sm font-mono text-gray-300">{song.bpm || '-'}</td>
                   <td className="py-4 px-6 text-center font-black text-primary">{song.key || '-'}</td>
-                  <td className="py-4 px-6 text-right text-xs text-gray-500 font-mono">{song.duration || '--:--'}</td>
                   {isAdmin && <td className="py-4 px-6 text-right relative song-menu-container" onClick={e => e.stopPropagation()}>
                     <button onClick={() => setOpenMenuId(openMenuId === (song.id || song._id) ? null : (song.id || song._id))} className="p-2 text-gray-600 hover:text-white"><svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" /></svg></button>
                     {openMenuId === (song.id || song._id) && <div className="absolute right-6 top-10 w-40 bg-[#0a0a0a] border border-white/10 rounded-sub shadow-2xl z-50 py-2 text-left backdrop-blur-3xl"><button onClick={() => { onEditSong(song); setOpenMenuId(null); }} className="w-full px-4 py-2 text-xs hover:bg-white/5">Editar</button><button onClick={() => { onDuplicateSong(song); setOpenMenuId(null); }} className="w-full px-4 py-2 text-xs hover:bg-white/5">Duplicar</button><button onClick={() => { onDeleteSong(song.id || song._id); setOpenMenuId(null); }} className="w-full px-4 py-2 text-xs text-red-500/70 hover:bg-red-500/10">Eliminar</button></div>}
                   </td>}
                 </tr>
               ))}
-              {/* Espaciador para que el menú de la última fila no se corte */}
-              {songs.length > 0 && (
-                <tr className="h-32 pointer-events-none">
-                  <td colSpan={isAdmin ? 8 : 6}></td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -238,7 +225,6 @@ const SongList = ({
                 isAdmin={isAdmin}
                 isSelected={selectedSongs.includes(song.id || song._id)}
                 onSelectSong={handleSelectSong}
-                duration={song.duration || '--:--'}
                 isOpen={openMenuId === (song.id || song._id)}
                 onMenuToggle={setOpenMenuId}
                 onEdit={onEditSong}

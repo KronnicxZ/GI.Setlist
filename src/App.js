@@ -16,7 +16,6 @@ import { extractYoutubeVideoId, getVideoDuration } from './utils/youtube';
 
 function App() {
   const [songs, setSongs] = useState([]);
-  const [songDurations, setSongDurations] = useState({});
   const [setlists, setSetlists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,42 +95,6 @@ function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const fetchAllDurations = async () => {
-      for (const song of songs) {
-        const sId = song.id || song._id;
-        const hasValidDuration = song.duration && song.duration !== '--:--' && song.duration !== '-';
-
-        if (song.youtubeUrl && !hasValidDuration) {
-          const videoId = extractYoutubeVideoId(song.youtubeUrl);
-          if (videoId) {
-            try {
-              const durationValue = await getVideoDuration(videoId);
-              if (durationValue && durationValue !== '-') {
-                // 1. Actualizar estado local inmediatamente
-                setSongs(prevSongs => prevSongs.map(s =>
-                  (s.id === sId || s._id === sId) ? { ...s, duration: durationValue } : s
-                ));
-
-                // 2. Guardar en base de datos de forma silenciosa para la próxima vez
-                fetch(`${API_URL}/songs/${sId}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ ...song, duration: durationValue })
-                }).catch(e => console.error('Error auto-saving duration:', e));
-              }
-            } catch (e) {
-              console.error('Error fetching duration for', song.title, e);
-            }
-          }
-        }
-      }
-    };
-
-    if (songs.length > 0) {
-      fetchAllDurations();
-    }
-  }, [songs.length]); // Solo ejecutar cuando cambia la cantidad de canciones
 
   // Lógica del Toque Secreto: 5 clics en 2 segundos
   const handleLogoClick = () => {
@@ -218,30 +181,6 @@ function App() {
   }
 
 
-  const getTotalDuration = () => {
-    if (!selectedSetlist) return null;
-    let totalSeconds = 0;
-
-    // Usamos filteredSongs que ya tiene las canciones del setlist
-    filteredSongs.forEach(song => {
-      const sId = song.id || song._id;
-      // Preferimos la duración guardada en DB, si no, la automática de YouTube
-      const durationStr = song.duration || songDurations[sId];
-
-      if (durationStr && durationStr.includes(':')) {
-        const parts = durationStr.split(':');
-        if (parts.length === 2) {
-          const [min, sec] = parts.map(Number);
-          totalSeconds += (min * 60) + (sec || 0);
-        }
-      }
-    });
-
-    if (totalSeconds === 0) return null;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes} min${seconds > 0 ? ` ${seconds}s` : ''}`;
-  };
 
   const handleSaveSong = async (songData) => {
     try {
@@ -588,12 +527,6 @@ function App() {
                       </span>
                     )}
                     {selectedSetlist && (
-                      <span className="text-sm font-bold text-primary bg-primary/10 px-4 py-2 rounded-full border border-primary/10 flex items-center space-x-2">
-                        <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" /></svg>
-                        <span>{getTotalDuration() || '--:--'}</span>
-                      </span>
-                    )}
-                    {selectedSetlist && (
                       <span className="text-sm font-bold text-gray-500 px-2 uppercase tracking-widest">{filteredSongs.length} temas</span>
                     )}
                     {selectedSetlist && <button onClick={() => setSelectedSetlist(null)} className="text-gray-500 hover:text-white p-2 hover:bg-white/5 rounded-full transition-colors"><svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg></button>}
@@ -707,7 +640,6 @@ function App() {
                   onAddToSetlist={handleAddToSetlist}
                   isMobile={true}
                   isRemovingFromSetlist={!!selectedSetlist}
-                  externalDurations={songDurations}
                   loading={loading}
                   onClearFilters={() => { setSearchTerm(''); setGenreFilter('Todas'); }}
                 />
