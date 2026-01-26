@@ -48,7 +48,7 @@ function App() {
   const { isAdmin, logout } = useAuth();
 
   const API_URL = process.env.REACT_APP_API_URL ||
-    (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api');
+    ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000/api' : '/api');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -398,31 +398,41 @@ function App() {
       if (response.ok) {
         setSuccessAlert({ isOpen: true, message: 'Base de datos restaurada correctamente. La página se recargará.' });
 
-        // Limpiar todos los cachés del Service Worker antes de recargar
         setTimeout(async () => {
           if ('serviceWorker' in navigator && 'caches' in window) {
             const cacheNames = await caches.keys();
             await Promise.all(cacheNames.map(name => caches.delete(name)));
           }
-          // Hard reload para forzar la recarga sin caché
           window.location.reload(true);
         }, 2000);
       } else {
-        const error = await response.json();
-        setErrorAlert({ isOpen: true, message: `Error al restaurar: ${error.error}` });
+        let errorMsg = 'Error desconocido';
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || response.statusText;
+        } catch (e) {
+          errorMsg = response.statusText;
+        }
+        setErrorAlert({ isOpen: true, message: `Error al restaurar: ${errorMsg}` });
       }
     } catch (error) {
       console.error('Error al restaurar:', error);
-      setErrorAlert({ isOpen: true, message: 'Error al procesar el archivo de copia de seguridad' });
+      setErrorAlert({
+        isOpen: true,
+        message: `Error de red o de archivo: ${error.message || 'No se pudo conectar con el servidor'}`
+      });
+    } finally {
+      if (restoreAlert.event && restoreAlert.event.target) {
+        restoreAlert.event.target.value = '';
+      }
     }
-    event.target.value = '';
   };
 
   return (
     <>
       {/* Eliminamos el loader de pantalla completa para dejar paso a los skeletons */}
 
-      <div className="flex min-h-screen bg-main text-white md:gap-4">
+      <div className="flex flex-col md:flex-row min-h-screen bg-main text-white md:gap-4 overflow-x-hidden">
         {/* Desktop Sidebar */}
         <div className={`hidden md:flex flex-col h-screen sticky top-0 z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}>
           <button
@@ -555,8 +565,8 @@ function App() {
           </header>
 
           {/* Genre Tabs Filter */}
-          <div className="px-8 mt-4 no-print">
-            <div className="max-w-[1800px] mx-auto flex items-center space-x-2 bg-white/5 p-1 rounded-xl w-fit border border-white/5">
+          <div className="px-4 md:px-8 mt-4 no-print">
+            <div className="max-w-[1800px] mx-auto flex items-center space-x-2 bg-white/5 p-1 rounded-xl w-full md:w-fit border border-white/5 overflow-x-auto no-scrollbar">
               {['Todas', 'Alabanza', 'Adoración'].map(genre => {
                 const normalize = (text) =>
                   text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -598,7 +608,7 @@ function App() {
                       >
                         <img src="/favicon.png" alt="Logo" className="w-5 h-5" />
                       </div>
-                      <h1 className="text-2xl font-black">{selectedSetlist ? selectedSetlist.name : 'Biblioteca'}</h1>
+                      <h1 className="text-2xl font-black truncate max-w-[200px] sm:max-w-none">{selectedSetlist ? selectedSetlist.name : 'Biblioteca'}</h1>
                     </div>
                     <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{filteredSongs.length} temas</div>
                   </div>
@@ -703,7 +713,7 @@ function App() {
           </main>
 
           {/* Mobile Bottom Navigation Bar */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-main/90 backdrop-blur-xl border-t border-white/5 pt-3 pb-6 px-10">
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-main/90 backdrop-blur-xl border-t border-white/5 pt-3 pb-6 px-4 overscroll-none">
             <div className="flex justify-between items-center max-w-sm mx-auto">
               <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center space-y-1 transform transition-all active:scale-90 ${activeTab === 'library' ? 'text-primary' : 'text-gray-500'}`}>
                 <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12,13A5,5 0 0,1 7,8H9A3,3 0 0,0 12,11A3,3 0 0,0 15,8H17A5,5 0 0,1 12,13M12,3A3,3 0 0,1 15,6H9A3,3 0 0,1 12,3M19,6H17A5,5 0 0,0 12,1A5,5 0 0,0 7,6H5C3.89,6 3,6.89 3,8V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V8C21,6.89 20.11,6 19,6Z" /></svg>

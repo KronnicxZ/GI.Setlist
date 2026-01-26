@@ -94,12 +94,12 @@ const SongList = ({
         </div>
       )}
 
-      <div className="rounded-main border border-white/5 bg-white/[0.01] overflow-hidden">
+      <div className="rounded-main border border-white/5 bg-white/[0.01] overflow-x-auto custom-scrollbar shadow-inner">
         <table className="min-w-full border-separate border-spacing-0">
           <thead>
             <tr className="text-left text-[11px] text-gray-400 uppercase tracking-widest">
               {isAdmin && (
-                <th className="py-5 px-6 font-bold w-12 border-b border-white/5 bg-white/[0.03] glass">
+                <th className="py-5 px-4 md:px-6 font-bold w-12 border-b border-white/5 bg-white/[0.03] glass">
                   <div className="flex items-center justify-center">
                     <button
                       onClick={() => setSelectedSongs(selectedSongs.length === songs.length ? [] : songs.map(s => s.id || s._id))}
@@ -112,14 +112,14 @@ const SongList = ({
                   </div>
                 </th>
               )}
-              <th className={`py-5 px-6 font-bold border-b border-white/5 bg-white/[0.03] glass ${!isAdmin ? 'rounded-tl-main' : ''}`}>Pista</th>
-              <th className="py-5 px-6 font-bold border-b border-white/5 hidden md:table-cell bg-white/[0.03] glass">Artista</th>
-              <th className="py-5 px-6 font-bold border-b border-white/5 hidden lg:table-cell bg-white/[0.03] glass">Género</th>
-              <th className="py-5 px-6 font-bold border-b border-white/5 hidden sm:table-cell bg-white/[0.03] glass">BPM</th>
-              <th className="py-5 px-6 font-bold border-b border-white/5 hidden sm:table-cell text-center bg-white/[0.03] glass">Tono</th>
-              <th className="py-5 px-6 font-bold border-b border-white/5 hidden md:table-cell text-right bg-white/[0.03] glass">Duración</th>
+              <th className={`py-5 px-4 md:px-6 font-bold border-b border-white/5 bg-white/[0.03] glass ${!isAdmin ? 'rounded-tl-main' : ''}`}>Pista</th>
+              <th className="py-5 px-4 md:px-6 font-bold border-b border-white/5 hidden md:table-cell bg-white/[0.03] glass">Artista</th>
+              <th className="py-5 px-4 md:px-6 font-bold border-b border-white/5 hidden lg:table-cell bg-white/[0.03] glass">Género</th>
+              <th className="py-5 px-4 md:px-6 font-bold border-b border-white/5 hidden sm:table-cell bg-white/[0.03] glass">BPM</th>
+              <th className="py-5 px-4 md:px-6 font-bold border-b border-white/5 hidden sm:table-cell text-center bg-white/[0.03] glass">Tono</th>
+              <th className="py-5 px-4 md:px-6 font-bold border-b border-white/5 hidden md:table-cell text-right bg-white/[0.03] glass">Duración</th>
               {isAdmin && (
-                <th className="py-5 px-6 font-bold border-b border-white/5 w-16 rounded-tr-main bg-white/[0.03] glass"></th>
+                <th className="py-5 px-4 md:px-6 font-bold border-b border-white/5 w-16 rounded-tr-main bg-white/[0.03] glass"></th>
               )}
             </tr>
           </thead>
@@ -188,7 +188,7 @@ const SongList = ({
                   onClick={() => onSongSelect(song)}
                 >
                   {isAdmin && (
-                    <td className="py-4 px-6" onClick={e => e.stopPropagation()}>
+                    <td className="py-4 px-4 md:px-6" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-center">
                         <div
                           onClick={(e) => handleSelectSong(e, song.id || song._id)}
@@ -201,7 +201,7 @@ const SongList = ({
                       </div>
                     </td>
                   )}
-                  <td className="py-4 px-6">
+                  <td className="py-4 px-4 md:px-6">
                     <div className="flex items-center space-x-4">
                       {(() => {
                         const videoId = extractYoutubeVideoId(song.youtubeUrl);
@@ -225,13 +225,13 @@ const SongList = ({
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-sm text-gray-400 font-medium hidden md:table-cell">{song.artist || '-'}</td>
-                  <td className="py-4 px-6 text-[10px] hidden lg:table-cell">
+                  <td className="py-4 px-4 md:px-6 text-sm text-gray-400 font-medium hidden md:table-cell">{song.artist || '-'}</td>
+                  <td className="py-4 px-4 md:px-6 text-[10px] hidden lg:table-cell">
                     <span className="px-2 py-1 bg-white/5 rounded-full text-gray-500 uppercase font-black tracking-wider group-hover:bg-primary/10 group-hover:text-primary transition-all transition-duration-300">
                       {song.genre || '-'}
                     </span>
                   </td>
-                  <td className="py-4 px-6 text-sm font-mono hidden sm:table-cell">
+                  <td className="py-4 px-4 md:px-6 text-sm font-mono hidden sm:table-cell">
                     {song.bpm ? (
                       <div className="flex items-center space-x-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse"></div>
@@ -239,14 +239,14 @@ const SongList = ({
                       </div>
                     ) : '-'}
                   </td>
-                  <td className="py-4 px-6 text-sm font-black text-primary text-center hidden sm:table-cell uppercase tracking-tighter">{song.key || song.originalKey || '-'}</td>
-                  <td className="py-4 px-6 text-[11px] text-gray-500 font-mono text-right hidden md:table-cell">{song.duration || songDurations[song.id || song._id] || '--:--'}</td>
+                  <td className="py-4 px-4 md:px-6 text-sm font-black text-primary text-center hidden sm:table-cell uppercase tracking-tighter">{song.key || song.originalKey || '-'}</td>
+                  <td className="py-4 px-4 md:px-6 text-[11px] text-gray-500 font-mono text-right hidden md:table-cell">{song.duration || songDurations[song.id || song._id] || '--:--'}</td>
                   {isAdmin && (
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-4 md:px-6">
                       <div className="flex items-center justify-end relative song-menu-container">
                         <button
                           onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === (song.id || song._id) ? null : (song.id || song._id)); }}
-                          className="p-2 text-gray-600 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                          className="p-3 md:p-2 text-gray-600 hover:text-white hover:bg-white/5 rounded-lg transition-all"
                         >
                           <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" /></svg>
                         </button>
