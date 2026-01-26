@@ -172,6 +172,37 @@ function App() {
       normalize(song.genre) === normalize(genreFilter);
 
     return matchesSearch && matchesGenre;
+  }).sort((a, b) => {
+    // Helper para comparar strings de forma segura
+    const compareStrings = (s1, s2) => (s1 || '').toString().localeCompare((s2 || '').toString());
+
+    switch (sortBy) {
+      case 'title':
+        return compareStrings(a.title, b.title);
+      case 'artist':
+        return compareStrings(a.artist, b.artist);
+      case 'genre':
+        return compareStrings(a.genre, b.genre);
+      case 'bpm':
+        const bpmA = parseInt(a.bpm) || 0;
+        const bpmB = parseInt(b.bpm) || 0;
+        return bpmA - bpmB;
+      case 'key':
+        return compareStrings(a.key, b.key);
+      case 'duration':
+        const getSecs = (song) => {
+          const d = song.duration || songDurations[song.id || song._id];
+          if (!d || !d.includes(':')) return 0;
+          const [m, s] = d.split(':').map(Number);
+          return (m * 60) + (s || 0);
+        };
+        return getSecs(a) - getSecs(b);
+      default: // 'Recientes' o cualquier otro
+        // Orden inverso por ID (MongoDB IDs son cronológicos)
+        const idA = a._id || a.id || '';
+        const idB = b._id || b.id || '';
+        return idB.toString().localeCompare(idA.toString());
+    }
   });
 
   const getTotalDuration = () => {
