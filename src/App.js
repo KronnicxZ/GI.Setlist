@@ -102,19 +102,23 @@ function App() {
         const sId = song.id || song._id;
         const hasValidDuration = song.duration && song.duration !== '--:--' && song.duration !== '-';
 
-        if (song.youtubeUrl && !hasValidDuration && !songDurations[sId]) {
+        if (song.youtubeUrl && !hasValidDuration) {
           const videoId = extractYoutubeVideoId(song.youtubeUrl);
           if (videoId) {
             try {
               const durationValue = await getVideoDuration(videoId);
               if (durationValue && durationValue !== '-') {
-                setSongDurations(prev => {
-                  if (prev[sId] === durationValue) return prev;
-                  return {
-                    ...prev,
-                    [sId]: durationValue
-                  };
-                });
+                // 1. Actualizar estado local inmediatamente
+                setSongs(prevSongs => prevSongs.map(s =>
+                  (s.id === sId || s._id === sId) ? { ...s, duration: durationValue } : s
+                ));
+
+                // 2. Guardar en base de datos de forma silenciosa para la próxima vez
+                fetch(`${API_URL}/songs/${sId}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ...song, duration: durationValue })
+                }).catch(e => console.error('Error auto-saving duration:', e));
               }
             } catch (e) {
               console.error('Error fetching duration for', song.title, e);
@@ -127,7 +131,7 @@ function App() {
     if (songs.length > 0) {
       fetchAllDurations();
     }
-  }, [songs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [songs.length]); // Solo ejecutar cuando cambia la cantidad de canciones
 
   // Lógica del Toque Secreto: 5 clics en 2 segundos
   const handleLogoClick = () => {
