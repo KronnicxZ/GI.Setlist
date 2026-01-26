@@ -150,60 +150,64 @@ function App() {
     );
   }
 
-  const filteredSongs = (selectedSetlist
-    ? songs.filter(song => selectedSetlist.songs.some(s => {
-      const sId = s.id || s._id || s;
-      return sId === song.id || sId === song._id;
-    }))
-    : songs
-  ).filter(song => {
-    // Aplicar búsqueda por texto
-    const title = song.title || '';
-    const artist = song.artist || '';
-    const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      artist.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredSongs = React.useMemo(() => {
+    const list = (selectedSetlist
+      ? songs.filter(song => selectedSetlist.songs.some(s => {
+        const sId = s.id || s._id || s;
+        return sId === song.id || sId === song._id;
+      }))
+      : songs
+    ).filter(song => {
+      // Aplicar búsqueda por texto
+      const title = song.title || '';
+      const artist = song.artist || '';
+      const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        artist.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Helper para normalizar texto (quitar acentos)
-    const normalize = (text) =>
-      text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      // Helper para normalizar texto (quitar acentos)
+      const normalize = (text) =>
+        text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // Aplicar filtro de género (normalizado para ignorar acentos y mayúsculas)
-    const matchesGenre = genreFilter === 'Todas' ||
-      normalize(song.genre) === normalize(genreFilter);
+      // Aplicar filtro de género (normalizado para ignorar acentos y mayúsculas)
+      const matchesGenre = genreFilter === 'Todas' ||
+        normalize(song.genre) === normalize(genreFilter);
 
-    return matchesSearch && matchesGenre;
-  }).sort((a, b) => {
-    // Helper para comparar strings de forma segura
-    const compareStrings = (s1, s2) => (s1 || '').toString().localeCompare((s2 || '').toString());
+      return matchesSearch && matchesGenre;
+    });
 
-    switch (sortBy) {
-      case 'title':
-        return compareStrings(a.title, b.title);
-      case 'artist':
-        return compareStrings(a.artist, b.artist);
-      case 'genre':
-        return compareStrings(a.genre, b.genre);
-      case 'bpm':
-        const bpmA = parseInt(a.bpm) || 0;
-        const bpmB = parseInt(b.bpm) || 0;
-        return bpmA - bpmB;
-      case 'key':
-        return compareStrings(a.key, b.key);
-      case 'duration':
-        const getSecs = (song) => {
-          const d = song.duration || songDurations[song.id || song._id];
-          if (!d || !d.includes(':')) return 0;
-          const [m, s] = d.split(':').map(Number);
-          return (m * 60) + (s || 0);
-        };
-        return getSecs(a) - getSecs(b);
-      default: // 'Recientes' o cualquier otro
-        // Orden inverso por ID (MongoDB IDs son cronológicos)
-        const idA = a._id || a.id || '';
-        const idB = b._id || b.id || '';
-        return idB.toString().localeCompare(idA.toString());
-    }
-  });
+    return list.sort((a, b) => {
+      // Helper para comparar strings de forma segura
+      const compareStrings = (s1, s2) => (s1 || '').toString().localeCompare((s2 || '').toString());
+
+      switch (sortBy) {
+        case 'title':
+          return compareStrings(a.title, b.title);
+        case 'artist':
+          return compareStrings(a.artist, b.artist);
+        case 'genre':
+          return compareStrings(a.genre, b.genre);
+        case 'bpm':
+          const bpmA = parseInt(a.bpm) || 0;
+          const bpmB = parseInt(b.bpm) || 0;
+          return bpmA - bpmB;
+        case 'key':
+          return compareStrings(a.key, b.key);
+        case 'duration':
+          const getSecs = (song) => {
+            const d = song.duration || songDurations[song.id || song._id];
+            if (!d || !d.includes(':')) return 0;
+            const [m, s] = d.split(':').map(Number);
+            return (m * 60) + (s || 0);
+          };
+          return getSecs(a) - getSecs(b);
+        default: // 'Recientes' o cualquier otro
+          // Orden inverso por ID (MongoDB IDs son cronológicos)
+          const idA = a._id || a.id || '';
+          const idB = b._id || b.id || '';
+          return idB.toString().localeCompare(idA.toString());
+      }
+    });
+  }, [songs, selectedSetlist, searchTerm, genreFilter, sortBy, songDurations]);
 
   const getTotalDuration = () => {
     if (!selectedSetlist) return null;
@@ -463,7 +467,7 @@ function App() {
     <>
       {/* Eliminamos el loader de pantalla completa para dejar paso a los skeletons */}
 
-      <div className="flex flex-col md:flex-row h-screen w-full bg-main text-white md:gap-4 overflow-hidden">
+      <div className={`flex flex-col md:flex-row h-screen w-full bg-main text-white md:gap-4 overflow-hidden ${selectedSong ? 'hidden md:flex' : 'flex'}`}>
         {/* Desktop Sidebar */}
         <div className={`hidden md:flex flex-col h-screen sticky top-0 z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}>
           <button

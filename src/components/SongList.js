@@ -220,8 +220,8 @@ const SongList = ({
 
         {/* Mobile Card View */}
         <div className="md:hidden flex flex-col space-y-3 w-full pb-4">
-          {loading ? [...Array(4)].map((_, i) => (
-            <div key={`m-sk-${i}`} className="bg-white/5 rounded-2xl p-4 animate-pulse h-20"></div>
+          {loading ? [...Array(6)].map((_, i) => (
+            <div key={`m-sk-${i}`} className="bg-white/5 rounded-2xl p-4 animate-pulse h-[74px]"></div>
           )) : songs.length === 0 ? (
             <div className="py-12 text-center text-gray-500 text-sm italic">No se encontraron temas</div>
           ) : (
@@ -248,4 +248,4 @@ const SongList = ({
   );
 };
 
-export default SongList;
+export default memo(SongList);
