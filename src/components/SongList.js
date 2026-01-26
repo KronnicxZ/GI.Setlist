@@ -19,7 +19,7 @@ const SongCard = memo(({
   return (
     <div
       onClick={() => onSongSelect(song)}
-      className={`flex items-center space-x-3 p-3 rounded-2xl border transition-all duration-200 active:scale-[0.97] will-change-transform relative overflow-hidden ${isOpen ? 'z-[200]' : 'song-card-optimized'
+      className={`flex items-center space-x-3 p-3 rounded-2xl border transition-all duration-200 active:scale-[0.97] will-change-transform relative ${isOpen ? 'z-[200]' : 'song-card-optimized overflow-hidden'
         } ${isSelected ? 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/5' : 'bg-white/[0.04] border-white/5'} w-full`}
     >
       {isAdmin && (
@@ -163,7 +163,7 @@ const SongList = ({
         </div>
       )}
 
-      <div className="overflow-hidden">
+      <div>
         {/* Desktop Table View */}
         <div className="hidden md:block rounded-main border border-white/5 bg-white/[0.01] overflow-x-auto custom-scrollbar shadow-inner">
           <table className="min-w-full border-separate border-spacing-0">
