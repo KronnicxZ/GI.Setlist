@@ -593,7 +593,7 @@ function App() {
                 </div>
               </div>
               <div className="flex items-center gap-4 flex-1 max-w-2xl justify-end">
-                <div className="flex-1"><SearchBar onSearch={setSearchTerm} /></div>
+                <div className="flex-1"><SearchBar value={searchTerm} onSearch={setSearchTerm} /></div>
                 <div className="min-w-[160px]"><SortFilter onSortChange={setSortBy} /></div>
                 {isAdmin && <button onClick={() => { setEditingSong(null); setShowSongForm(true); }} className="bg-primary text-black h-[42px] px-6 rounded-sub font-bold flex items-center justify-center space-x-2 hover:bg-primary-hover shadow-lg active:scale-95 transition-all"><svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg><span>Nueva</span></button>}
               </div>
@@ -657,7 +657,7 @@ function App() {
             )}
 
             {activeTab === 'search' && (
-              <div className="pb-2 animate-fade-in"><SearchBar onSearch={setSearchTerm} /></div>
+              <div className="pb-2 animate-fade-in"><SearchBar value={searchTerm} onSearch={setSearchTerm} /></div>
             )}
           </div>
 

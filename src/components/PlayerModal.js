@@ -232,8 +232,8 @@ const PlayerModal = ({ song, onClose }) => {
   const newKey = originalKeyIndex !== -1 ? NOTES[newKeyIndex] + (isMinor ? 'm' : '') : baseKey;
 
   return (
-    <div className={`fixed inset-0 bg-black md:bg-black/90 md:backdrop-blur-xl z-[150] overflow-y-auto md:overflow-hidden animate-fade-in flex items-start md:items-center justify-center p-0 md:p-4 no-print`}>
-      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative md:overflow-hidden flex flex-col md:flex-row min-h-full md:h-full md:max-h-[90vh]">
+    <div className={`fixed inset-0 bg-black md:bg-black/90 md:backdrop-blur-xl z-[150] overflow-y-auto overflow-x-hidden md:overflow-hidden animate-fade-in flex items-start md:items-center justify-center p-0 md:p-4 no-print`}>
+      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative overflow-x-hidden md:overflow-hidden flex flex-col md:flex-row min-h-full md:h-full md:max-h-[90vh]">
 
         <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -455,8 +455,8 @@ const PlayerModal = ({ song, onClose }) => {
               </button>
             </div>
           </div>
-          <div className="flex-1 p-6 md:p-12 overflow-y-visible md:overflow-y-auto custom-scrollbar">
-            <div className="rich-text-content text-gray-300">
+          <div className="flex-1 p-6 md:p-12 overflow-y-visible md:overflow-y-auto overflow-x-hidden custom-scrollbar">
+            <div className="rich-text-content text-gray-300 break-words max-w-full">
               {renderLyrics()}
             </div>
           </div>
