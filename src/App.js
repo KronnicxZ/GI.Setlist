@@ -762,7 +762,7 @@ function App() {
           <div className={`md:hidden fixed bottom-1 left-4 right-4 z-[100] bg-main/60 backdrop-blur-2xl border border-white/5 rounded-2xl px-1 py-1 mb-2 shadow-2xl ${(selectedSong || showSongForm) ? 'hidden' : 'block'}`}>
             <div className="flex justify-around items-center">
               <button
-                onClick={() => { setActiveTab('library'); setSelectedSong(null); }}
+                onClick={() => { setActiveTab('library'); setSelectedSong(null); setSelectedSetlist(null); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'library' ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12,13A5,5 0 0,1 7,8H9A3,3 0 0,0 12,11A3,3 0 0,0 15,8H17A5,5 0 0,1 12,13M12,3A3,3 0 0,1 15,6H9A3,3 0 0,1 12,3M19,6H17A5,5 0 0,0 12,1A5,5 0 0,0 7,6H5C3.89,6 3,6.89 3,8V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V8C21,6.89 20.11,6 19,6Z" /></svg>
