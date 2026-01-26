@@ -12,7 +12,7 @@ import DuplicateModal from './components/DuplicateModal';
 import AdminPanel from './components/AdminPanel';
 import CustomAlert from './components/CustomAlert';
 import { useAuth } from './context/AuthContext';
-import { extractYoutubeVideoId, getVideoDuration } from './utils/youtube';
+import { extractYoutubeVideoId } from './utils/youtube';
 
 function App() {
   const [songs, setSongs] = useState([]);
@@ -152,14 +152,6 @@ function App() {
           return bpmA - bpmB;
         case 'key':
           return compareStrings(a.key, b.key);
-        case 'duration':
-          const getSecs = (song) => {
-            const d = song.duration || songDurations[song.id || song._id];
-            if (!d || !d.includes(':')) return 0;
-            const [m, s] = d.split(':').map(Number);
-            return (m * 60) + (s || 0);
-          };
-          return getSecs(a) - getSecs(b);
         default: // 'Recientes' o cualquier otro
           // Orden inverso por ID (MongoDB IDs son cronológicos)
           const idA = a._id || a.id || '';
@@ -167,7 +159,7 @@ function App() {
           return idB.toString().localeCompare(idA.toString());
       }
     });
-  }, [songs, selectedSetlist, searchTerm, genreFilter, sortBy, songDurations]);
+  }, [songs, selectedSetlist, searchTerm, genreFilter, sortBy]);
 
   if (loading) {
     return (

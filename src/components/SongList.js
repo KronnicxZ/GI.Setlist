@@ -81,7 +81,6 @@ const SongList = ({
   setlists,
   onAddToSetlist,
   isRemovingFromSetlist,
-  externalDurations,
   loading,
   onClearFilters
 }) => {
@@ -89,7 +88,6 @@ const SongList = ({
   const [openMenuId, setOpenMenuId] = useState(null);
   const { isAdmin } = useAuth();
 
-  const songDurations = externalDurations || {};
 
   useEffect(() => {
     const handleClickOutside = (event) => {

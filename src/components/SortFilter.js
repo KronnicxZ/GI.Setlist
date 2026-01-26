@@ -11,8 +11,7 @@ const SortFilter = ({ onSortChange }) => {
     { value: 'artist', label: 'Artista' },
     { value: 'genre', label: 'Género' },
     { value: 'bpm', label: 'BPM' },
-    { value: 'key', label: 'Tono' },
-    { value: 'duration', label: 'Duración' }
+    { value: 'key', label: 'Tono' }
   ];
 
   useEffect(() => {
