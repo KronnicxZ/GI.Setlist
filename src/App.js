@@ -139,17 +139,6 @@ function App() {
     return () => clearTimeout(timer);
   }, [logoClicks]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-gray-500 font-medium animate-pulse">Conectando con la biblioteca...</p>
-        </div>
-      </div>
-    );
-  }
-
   const filteredSongs = React.useMemo(() => {
     const list = (selectedSetlist
       ? songs.filter(song => selectedSetlist.songs.some(s => {
@@ -208,6 +197,18 @@ function App() {
       }
     });
   }, [songs, selectedSetlist, searchTerm, genreFilter, sortBy, songDurations]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-medium animate-pulse">Conectando con la biblioteca...</p>
+        </div>
+      </div>
+    );
+  }
+
 
   const getTotalDuration = () => {
     if (!selectedSetlist) return null;
