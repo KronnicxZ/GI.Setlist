@@ -274,23 +274,38 @@ function App() {
     if (!selectedSetlist) return;
     try {
       const idsToRemove = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
-      const updatedSongs = selectedSetlist.songs.filter(s => {
+      const remainingSongs = selectedSetlist.songs.filter(s => {
         const sId = s.id || s._id || s;
         return !idsToRemove.includes(sId);
       });
 
+      const remainingIds = remainingSongs.map(s => s.id || s._id || s);
+
       const response = await fetch(`${API_URL}/setlists/${selectedSetlist.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...selectedSetlist, songs: updatedSongs })
+        body: JSON.stringify({ songs: remainingIds })
       });
 
-      const updatedSetlist = await response.json();
-      setSetlists(setlists.map(s => s.id === selectedSetlist.id ? { ...updatedSetlist, id: updatedSetlist._id } : s));
-      setSelectedSetlist({ ...updatedSetlist, id: updatedSetlist._id });
+      if (!response.ok) throw new Error('Error al quitar canciones del setlist');
+
+      const updatedSetlistRaw = await response.json();
+
+      // Mantenemos los objetos de canciones que ya teníamos (ya están filtrados en remainingSongs)
+      const updatedSetlistInState = {
+        ...updatedSetlistRaw,
+        id: updatedSetlistRaw._id,
+        songs: remainingSongs
+      };
+
+      setSetlists(setlists.map(s => s.id === selectedSetlist.id ? updatedSetlistInState : s));
+      setSelectedSetlist(updatedSetlistInState);
+
+      setSuccessAlert({ isOpen: true, message: `Se quitaron ${idsToRemove.length} canciones del setlist` });
       if (callback) callback();
     } catch (error) {
       console.error('Error al quitar canción del setlist:', error);
+      setErrorAlert({ isOpen: true, message: 'No se pudieron quitar las canciones' });
     }
   };
 
@@ -313,19 +328,50 @@ function App() {
     }
   };
 
-  const handleAddToSetlist = async (setlistId, songId) => {
+  const handleAddToSetlist = async (songIdOrIds, setlistId) => {
     try {
+      const idsToAdd = Array.isArray(songIdOrIds) ? songIdOrIds : [songIdOrIds];
       const setlist = setlists.find(l => l.id === setlistId);
-      const newSongs = [...setlist.songs, songId];
+      if (!setlist) return;
+
+      // Combinar IDs existentes con los nuevos, evitando duplicados
+      const existingIds = setlist.songs.map(s => s.id || s._id || (typeof s === 'string' ? s : null)).filter(Boolean);
+      const uniqueNewIds = idsToAdd.filter(id => !existingIds.includes(id));
+
+      if (uniqueNewIds.length === 0) return;
+
+      const allNewSongIds = [...existingIds, ...uniqueNewIds];
+
+      // Enviamos solo los IDs al servidor
       const response = await fetch(`${API_URL}/setlists/${setlistId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ songs: newSongs })
+        body: JSON.stringify({ songs: allNewSongIds })
       });
-      const updatedSetlist = await response.json();
-      setSetlists(setlists.map(s => s.id === setlistId ? { ...updatedSetlist, id: updatedSetlist._id } : s));
+
+      if (!response.ok) throw new Error('Error al actualizar el setlist en el servidor');
+
+      const updatedSetlistRaw = await response.json();
+
+      // Re-poblamos localmente con los objetos completos de las canciones para que la UI los muestre
+      const populatedSongs = allNewSongIds.map(id => songs.find(s => s.id === id || s._id === id)).filter(Boolean);
+      const updatedSetlistInState = {
+        ...updatedSetlistRaw,
+        id: updatedSetlistRaw._id,
+        songs: populatedSongs
+      };
+
+      setSetlists(setlists.map(s => s.id === setlistId ? updatedSetlistInState : s));
+
+      // Si el setlist actualizado es el que está seleccionado, actualizarlo también
+      if (selectedSetlist?.id === setlistId) {
+        setSelectedSetlist(updatedSetlistInState);
+      }
+
+      setSuccessAlert({ isOpen: true, message: `Se añadieron ${uniqueNewIds.length} canciones con éxito` });
     } catch (error) {
       console.error('Error al agregar al setlist:', error);
+      setErrorAlert({ isOpen: true, message: 'No se pudieron añadir las canciones' });
     }
   };
 
