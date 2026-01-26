@@ -90,9 +90,10 @@ const SongList = ({
   onClearFilters
 }) => {
   const [selectedSongs, setSelectedSongs] = useState([]);
-  const [songDurations, setSongDurations] = useState({});
   const [openMenuId, setOpenMenuId] = useState(null);
   const { isAdmin } = useAuth();
+
+  const songDurations = externalDurations || {};
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -103,12 +104,6 @@ const SongList = ({
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    if (externalDurations) {
-      setSongDurations(externalDurations);
-    }
-  }, [externalDurations]);
 
   const handleSelectSong = (e, id) => {
     e.stopPropagation();
@@ -211,7 +206,11 @@ const SongList = ({
                   <td className="py-4 px-6 hidden lg:table-cell text-[10px] uppercase font-bold text-gray-500">{song.genre || '-'}</td>
                   <td className="py-4 px-6 text-sm font-mono text-gray-300">{song.bpm || '-'}</td>
                   <td className="py-4 px-6 text-center font-black text-primary">{song.key || '-'}</td>
-                  <td className="py-4 px-6 text-right text-xs text-gray-500 font-mono">{song.duration || songDurations[song.id || song._id] || '--:--'}</td>
+                  <td className="py-4 px-6 text-right text-xs text-gray-500 font-mono">
+                    {(song.duration && song.duration !== '--:--' && song.duration !== '-')
+                      ? song.duration
+                      : (songDurations[song.id || song._id] || '--:--')}
+                  </td>
                   {isAdmin && <td className="py-4 px-6 text-right relative song-menu-container" onClick={e => e.stopPropagation()}>
                     <button onClick={() => setOpenMenuId(openMenuId === (song.id || song._id) ? null : (song.id || song._id))} className="p-2 text-gray-600 hover:text-white"><svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" /></svg></button>
                     {openMenuId === (song.id || song._id) && <div className="absolute right-6 top-10 w-40 bg-[#0a0a0a] border border-white/10 rounded-sub shadow-2xl z-50 py-2 text-left backdrop-blur-3xl"><button onClick={() => { onEditSong(song); setOpenMenuId(null); }} className="w-full px-4 py-2 text-xs hover:bg-white/5">Editar</button><button onClick={() => { onDuplicateSong(song); setOpenMenuId(null); }} className="w-full px-4 py-2 text-xs hover:bg-white/5">Duplicar</button><button onClick={() => { onDeleteSong(song.id || song._id); setOpenMenuId(null); }} className="w-full px-4 py-2 text-xs text-red-500/70 hover:bg-red-500/10">Eliminar</button></div>}
@@ -243,7 +242,9 @@ const SongList = ({
                 isAdmin={isAdmin}
                 isSelected={selectedSongs.includes(song.id || song._id)}
                 onSelectSong={handleSelectSong}
-                duration={song.duration || songDurations[song.id || song._id] || '--:--'}
+                duration={(song.duration && song.duration !== '--:--' && song.duration !== '-')
+                  ? song.duration
+                  : (songDurations[song.id || song._id] || '--:--')}
                 isOpen={openMenuId === (song.id || song._id)}
                 onMenuToggle={setOpenMenuId}
                 onEdit={onEditSong}

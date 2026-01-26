@@ -98,31 +98,35 @@ function App() {
 
   useEffect(() => {
     const fetchAllDurations = async () => {
-      const durations = { ...songDurations };
-      let changed = false;
-
-      // Solo buscamos duraciones para canciones que No la tengan en BD
       for (const song of songs) {
         const sId = song.id || song._id;
-        if (song.youtubeUrl && !song.duration && !durations[sId]) {
+        const hasValidDuration = song.duration && song.duration !== '--:--' && song.duration !== '-';
+
+        if (song.youtubeUrl && !hasValidDuration && !songDurations[sId]) {
           const videoId = extractYoutubeVideoId(song.youtubeUrl);
           if (videoId) {
             try {
-              const duration = await getVideoDuration(videoId);
-              if (duration !== '-') {
-                durations[sId] = duration;
-                changed = true;
+              const durationValue = await getVideoDuration(videoId);
+              if (durationValue && durationValue !== '-') {
+                setSongDurations(prev => {
+                  if (prev[sId] === durationValue) return prev;
+                  return {
+                    ...prev,
+                    [sId]: durationValue
+                  };
+                });
               }
             } catch (e) {
-              console.error('Error fetching duration for', song.title);
+              console.error('Error fetching duration for', song.title, e);
             }
           }
         }
       }
-      if (changed) setSongDurations(durations);
     };
 
-    if (songs.length > 0) fetchAllDurations();
+    if (songs.length > 0) {
+      fetchAllDurations();
+    }
   }, [songs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lógica del Toque Secreto: 5 clics en 2 segundos
