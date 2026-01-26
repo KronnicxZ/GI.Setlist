@@ -17,6 +17,7 @@ const PlayerModal = ({ song, onClose }) => {
   const [bpm, setBpm] = useState(Number(song?.bpm) || 120);
   const [timeSignature, setTimeSignature] = useState('4/4');
   const [currentBeat, setCurrentBeat] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
 
   const synth = useRef(null);
   const repeatId = useRef(null);
@@ -253,17 +254,32 @@ const PlayerModal = ({ song, onClose }) => {
 
           <div className="p-6 md:p-8 pt-0 space-y-6 md:space-y-8 overflow-y-visible md:overflow-y-auto custom-scrollbar">
             {videoId ? (
-              <div className="rounded-sub overflow-hidden shadow-2xl bg-black border border-white/5 aspect-video relative group">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="absolute inset-0"
-                  title="YouTube Preview"
-                ></iframe>
+              <div className="rounded-sub overflow-hidden shadow-2xl bg-black border border-white/5 aspect-video relative group cursor-pointer" onClick={() => setShowVideo(true)}>
+                {!showVideo ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm group-hover:bg-black/20 transition-all">
+                    <img
+                      src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                      className="absolute inset-0 w-full h-full object-cover opacity-60"
+                      alt=""
+                      onError={(e) => { e.target.src = `https://img.youtube.com/vi/${videoId}/0.jpg`; }}
+                    />
+                    <div className="relative z-10 w-16 h-16 bg-primary text-black rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                      <svg className="w-8 h-8 ml-1" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
+                    </div>
+                    <span className="relative z-10 mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white bg-black/50 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">Cargar Video</span>
+                  </div>
+                ) : (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0"
+                    title="YouTube Preview"
+                  ></iframe>
+                )}
               </div>
             ) : (
               <div className="rounded-sub bg-white/5 border border-white/5 aspect-video flex items-center justify-center">
