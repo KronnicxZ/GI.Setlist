@@ -238,18 +238,20 @@ const PlayerModal = ({ song, onClose }) => {
         <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
         {/* Mobile Sticky Header */}
-        <div className="md:hidden sticky top-0 z-[60] bg-surface/95 backdrop-blur-xl p-6 pb-4 border-b border-white/5">
+        <div className="md:hidden sticky top-0 z-[60] bg-surface/95 backdrop-blur-xl px-4 py-3 border-b border-white/5">
           <button
             onClick={onClose}
-            className="flex items-center space-x-2 text-gray-500 hover:text-white transition-colors mb-4 group"
+            className="flex items-center space-x-2 text-gray-500 hover:text-white transition-colors mb-2 group"
           >
-            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10">
-              <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
+            <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10">
+              <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
             </div>
-            <span className="text-xs font-bold uppercase tracking-widest">Volver</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Volver</span>
           </button>
-          <h3 className="text-lg font-extrabold text-white mb-0.5 leading-tight">{song.title}</h3>
-          <p className="text-primary text-xs font-bold">{song.artist}</p>
+          <div className="flex items-baseline justify-between gap-4">
+            <h3 className="text-base font-extrabold text-white truncate leading-tight">{song.title}</h3>
+            <p className="text-primary text-[10px] font-bold truncate shrink-0 uppercase tracking-wider">{song.artist}</p>
+          </div>
         </div>
 
         <div className="modal-sidebar w-full md:w-[380px] lg:w-[400px] flex flex-col border-b md:border-b-0 md:border-r border-white/5 relative bg-black/20 shrink-0 no-print">
