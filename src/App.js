@@ -623,6 +623,7 @@ function App() {
 
               {(activeTab === 'library' || activeTab === 'search') && (
                 <SongList
+                  key={selectedSetlist ? selectedSetlist.id : 'library'}
                   songs={filteredSongs}
                   onSongSelect={setSelectedSong}
                   onEditSong={isAdmin ? (song) => { setEditingSong(song); setShowSongForm(true); } : null}

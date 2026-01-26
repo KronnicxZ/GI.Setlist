@@ -115,39 +115,52 @@ const SongList = ({
     <div className="space-y-4">
       {/* Barra de acciones masivas */}
       {selectedSongs.length > 0 && isAdmin && (
-        <div className="relative z-10 bg-primary px-4 md:px-6 py-3 rounded-xl flex items-center justify-between shadow-lg animate-fade-in mx-1 md:mx-0 mb-4 border border-black/10">
-          <div className="flex items-center space-x-3">
-            <span className="text-black font-black text-xs md:text-sm uppercase tracking-wider">{selectedSongs.length} <span className="hidden xs:inline">seleccionados</span></span>
-            <div className="h-4 w-px bg-black/20"></div>
+        <div className="sticky top-0 z-40 bg-[#161616]/95 backdrop-blur-md px-4 md:px-6 py-4 rounded-xl flex items-center justify-between shadow-2xl animate-fade-in mx-1 md:mx-0 mb-6 border border-white/10">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 bg-primary/20 px-3 py-1 rounded-full border border-primary/30">
+              <span className="text-primary font-black text-xs md:text-sm uppercase tracking-tighter">{selectedSongs.length}</span>
+              <span className="text-[10px] font-bold text-primary/80 uppercase tracking-widest hidden xs:inline">Seleccionados</span>
+            </div>
+            <div className="h-6 w-px bg-white/10"></div>
             <button
               onClick={handleBulkDelete}
-              className="flex items-center space-x-2 text-black/70 hover:text-black transition-colors text-xs font-bold uppercase tracking-widest"
+              className="flex items-center space-x-2 text-red-400 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-widest bg-red-400/10 px-4 py-2 rounded-lg border border-red-400/20"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19V4M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" /></svg>
-              <span className="hidden sm:inline">Eliminar</span>
+              <span className="hidden sm:inline">{isRemovingFromSetlist ? 'Quitar del Setlist' : 'Eliminar de Biblioteca'}</span>
             </button>
           </div>
-          <div className="flex items-center space-x-2">
-            {setlists && setlists.length > 0 && (
+          <div className="flex items-center space-x-3">
+            {!isRemovingFromSetlist && setlists && setlists.length > 0 && (
               <div className="relative group/setlist">
-                <button className="flex items-center space-x-2 px-3 py-2 text-xs md:text-sm font-semibold text-black bg-white/20 hover:bg-white/30 rounded-sub transition-all">
+                <button className="flex items-center space-x-2 px-4 py-2 text-xs md:text-sm font-bold text-white bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-lg transition-all">
                   <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
-                  <span className="hidden sm:inline">Añadir</span>
+                  <span className="hidden sm:inline">Añadir a Setlist</span>
                 </button>
-                <div className="absolute right-0 mt-2 w-56 py-2 bg-[#0a0a0a] border border-white/10 rounded-sub shadow-2xl invisible group-hover/setlist:visible z-30 animate-fade-in backdrop-blur-3xl">
+                <div className="absolute right-0 mt-2 w-56 py-2 bg-[#0a0a0a] border border-white/10 rounded-sub shadow-2xl invisible group-hover/setlist:visible z-[100] animate-fade-in backdrop-blur-3xl">
+                  <div className="px-4 py-2 border-b border-white/5 mb-1">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Seleccionar Setlist</span>
+                  </div>
                   {setlists.map(setlist => (
                     <button
                       key={setlist.id || setlist._id}
                       onClick={() => { onAddToSetlist(selectedSongs, setlist.id || setlist._id); setSelectedSongs([]); }}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                      className="w-full px-4 py-2.5 text-left text-xs font-bold text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-between group/item"
                     >
-                      {setlist.name}
+                      <span>{setlist.name}</span>
+                      <svg className="w-4 h-4 opacity-0 group-hover/item:opacity-100 transition-opacity" viewBox="0 0 24 24"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></svg>
                     </button>
                   ))}
                 </div>
               </div>
             )}
-            <button onClick={() => setSelectedSongs([])} className="p-2 text-black/50 hover:text-black"><svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg></button>
+            <button
+              onClick={() => setSelectedSongs([])}
+              className="p-2 text-gray-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 transition-all"
+              title="Cancelar selección"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
+            </button>
           </div>
         </div>
       )}
