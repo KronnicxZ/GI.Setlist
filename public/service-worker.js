@@ -1,8 +1,7 @@
-const CACHE_NAME = 'gi-setlist-v3-pwa';
+const CACHE_NAME = 'gi-setlist-v4-pwa';
 const urlsToCache = [
     '/',
     '/index.html',
-    '/static/js/bundle.js',
     '/favicon.png',
     '/gi-logo.png',
     '/icon-192.png',
