@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const ChatAI = () => {
+const ChatAI = ({ isPopup = false }) => {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: '¡Hola! 👋 Soy tu asistente musical. Puedo ayudarte con:\n\n• **Progresiones de acordes** para cualquier estilo\n• **Círculos armónicos** y modulaciones\n• **Teoría musical** explicada de forma sencilla\n• **Sugerencias de canciones** similares\n\n¿En qué puedo ayudarte?' }
   ]);
@@ -72,7 +72,7 @@ const ChatAI = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto h-[calc(100vh-220px)] md:h-[70vh] flex flex-col bg-[#121212] border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative">
+    <div className={`w-full mx-auto flex flex-col bg-[#121212] overflow-hidden relative ${isPopup ? 'h-full rounded-2xl md:rounded-3xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]' : 'max-w-4xl h-[calc(100vh-220px)] md:h-[70vh] border border-white/10 rounded-2xl md:rounded-3xl shadow-2xl animate-fade-in'}`}>
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
       
       {/* Header */}

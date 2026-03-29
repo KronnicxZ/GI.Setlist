@@ -908,27 +908,26 @@ function App() {
         {!isAIChatOpen && (
           <button
             onClick={() => setIsAIChatOpen(true)}
-            className="fixed bottom-20 right-4 md:bottom-8 md:right-8 z-[150] bg-primary text-black flex items-center justify-center space-x-2 px-4 py-3 rounded-full shadow-[0_0_20px_rgba(251,174,0,0.3)] hover:bg-primary-hover hover:scale-105 active:scale-95 transition-all font-bold group"
+            className="fixed bottom-20 right-4 md:bottom-8 md:right-8 z-[150] bg-primary text-black w-14 h-14 flex items-center justify-center rounded-full shadow-[0_0_20px_rgba(251,174,0,0.4)] hover:bg-primary-hover hover:scale-105 active:scale-95 transition-all group"
             title="Asistente de IA"
           >
-            <svg className="w-6 h-6 group-hover:animate-pulse" viewBox="0 0 24 24">
+            <svg className="w-7 h-7 group-hover:animate-pulse" viewBox="0 0 24 24">
               <path fill="currentColor" d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7H14A7,7 0 0,1 21,14H22A1,1 0 0,1 23,15V18A1,1 0 0,1 22,19H21V20A2,2 0 0,1 19,22H5A2,2 0 0,1 3,20V19H2A1,1 0 0,1 1,18V15A1,1 0 0,1 2,14H3A7,7 0 0,1 10,7H11V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M7.5,13A2.5,2.5 0 0,0 5,15.5A2.5,2.5 0 0,0 7.5,18A2.5,2.5 0 0,0 10,15.5A2.5,2.5 0 0,0 7.5,13M16.5,13A2.5,2.5 0 0,0 14,15.5A2.5,2.5 0 0,0 16.5,18A2.5,2.5 0 0,0 19,15.5A2.5,2.5 0 0,0 16.5,13Z" />
             </svg>
-            <span className="hidden md:block">Asistente de IA</span>
           </button>
         )}
 
         {/* Global AI Chat Modal overlay */}
         {isAIChatOpen && (
-          <div className="fixed inset-0 bg-black/80 md:backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-            <div className="w-full max-w-4xl relative">
+          <div className="fixed inset-0 md:inset-auto md:bottom-24 md:right-8 z-[200] flex items-center justify-center md:items-end md:justify-end p-4 md:p-0 bg-black/80 md:bg-transparent md:pointer-events-none">
+            <div className="w-full max-w-4xl md:w-[420px] h-[85vh] md:h-[600px] min-h-[400px] max-h-screen relative animate-fade-in pointer-events-auto">
               <button 
                 onClick={() => setIsAIChatOpen(false)}
-                className="absolute -top-12 right-0 md:-top-4 md:-right-16 text-gray-400 hover:text-white bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg border border-white/10 z-[202]"
+                className="absolute -top-12 right-0 md:-top-3 md:-right-3 text-gray-400 hover:text-white bg-black/50 hover:bg-black/90 md:bg-[#1f1f1f] w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all shadow-lg border border-white/20 z-[202]"
               >
-                <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                <svg className="w-6 h-6 md:w-4 md:h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               </button>
-              <ChatAI />
+              <ChatAI isPopup={true} />
             </div>
           </div>
         )}
