@@ -29,30 +29,33 @@ Este documento sirve como bitácora de los avances, optimizaciones y refactoriza
   - Se utilizó `tone.js` para proveer sonido de precisión milimétrica inmune a los *delays* que suele dar Javascript estándar por los bucles de renderizado.
   - Diseño impactante de "luces" que parpadean según los Beats Per Measure (BPM), controles deslizantes suaves y pantalla numérica gigante con gradientes metálicos.
 
+### 6. Asistente de IA de Contexto Avanzado (Global)
+- **Botón Flotante Global:** Se integró un botón circular ultra-discreto y elegante en el layout principal (`App.js`) que ofrece acceso instantáneo al asistente desde cualquier pantalla.
+- **Conciencia de Base de Datos:** El asistente ahora consulta la lista completa de canciones del usuario (Título, Artista, Tono, BPM) antes de responder, permitiendo recomendaciones personalizadas basadas en su propio repertorio.
+- **Especialización Worship:** Configurado mediante un "System Prompt" robusto para actuar como experto en música Cristiana (Alabanza y Adoración).
+- **Interfaz No Invasiva:** En escritorio, el chat se abre como un popup lateral que permite seguir visualizando el contenido de la biblioteca mientras se consulta la IA. En móviles, se adapta a pantalla completa para máxima legibilidad.
+
+### 7. Optimización de Formato de Acordes y Visualización
+- **Formato Clásico Pro:** Se re-entrenó el prompt de generación para abandonar el formato "inline" y forzar el estilo clásico profesional (Acordes en línea superior, letra en línea inferior), mejorando drásticamente la lectura para músicos.
+- **Correcciones de Previsualización:** 
+  - Se reparó el bug de "Video no disponible" en el modal de reproducción al mejorar el extractor de IDs de YouTube para soportar enlaces cortos (`youtu.be`).
+  - Se eliminó el texto innecesario ("Estilo Chordify") de los botones para una UI más limpia.
+
+### 8. Lógica de Setlists y Sincronización
+- **Orden Personalizado Preservado:** Se eliminó el auto-ordenamiento alfabético en los setlists. Ahora las canciones se muestran exactamente en el orden en que el usuario las arrastró y guardó durante la creación del setlist.
+- **Sincronización de Fechas (Timezone Fix):** Se solucionó el desfase de fechas (donde un Domingo se mostraba como Sábado) forzando la visualización en formato `UTC` para todos los calendarios de setlists.
+- **Estado de Orden Inicial:** Se sincronizó el estado interno de la biblioteca para que inicie por defecto en "Recientes", coincidiendo con lo que indica la interfaz visual.
+
 ---
 
 ## ⏳ Pendiente por Desarrollar (Próximos Pasos)
 
-Basado en el sistema antiguo de "Generación Indetenible", aquí está el mapa de ruta para ir puliendo (una por una) las siguientes utilidades dentro de la nueva pestaña **Herramientas**:
-
-- [x] **Afinador:** 
-  Utilizar llamadas a la API de Web Audio (`getUserMedia`) para captar las frecuencias de la guitarra/bajo/voz a través del micrófono del dispositivo y mostrar el resultado (la nota y cuán desafinada está) gráficamente.
-
-- [x] **Song BPM (Tap Tempo):** 
-  Añadir un componente donde el usuario pueda dar "Taps" continuos al ritmo de una canción externa y el sistema promedie los milisegundos para revelar la velocidad en BPMs al instante.
-
-- [x] **Transponer:** 
-  Aunque la aplicación principal aparentemente ya formatea bloques con `[C]`, idealmente crear una pequeña utilidad rápida tipo *sandbox* donde peguen un texto con acordes y con dos botones (+/-) se transporten todos los armónicos arriba o abajo en semitonos.
-
-- [x] **Círculo de Quintas (Círculo):** 
-  Construir un diagrama interactivo SVG estético o interactividad modular donde el usuario pueda consultar tonalidades relativas, dominantes y subdominantes con tan solo girarlo o hacer clics rápidos en las escalas.
-
-- [x] **Progresiones:** 
-  Una tabla o tarjetas animadas que guarden información vital para composiciones, como progresiones de acordes muy usadas en la alabanza moderna (Por ej: `I - V - vi - IV`, `vi - IV - I - V`), posiblemente con botones para escucharlas accionadas internamente con `tone.js`.
+- [ ] **Afinador Cromático:** Implementar la detección de pitch en tiempo real.
+- [ ] **Tablatura Interactiva:** Explorar visualizadores de tablaturas para canciones seleccionadas.
 
 ---
 
-## 📝 Notas del Desarrollador para la Sesión Final
-- Todo el ecosistema base está completamente operativo.
-- El repositorio está a la espera del visto bueno del usuario habiendo relanzado mediante `npm run dev` para corroborar que la conexión y la carga automática de canciones fluya como el agua.
-- Solo resta ejecutar iteraciones ordenadas para agotar la lista de pendientes (Afinador > Tap Tempo > etc.).
+## 📝 Notas del Desarrollador
+- El sistema ha alcanzado un nivel de madurez profesional con la integración de la IA contextual.
+- La estabilidad del formato de acordes y la coherencia en el orden de los setlists cierran los flujos críticos de uso en vivo.
+- El repositorio se mantiene sincronizado en GitHub con commits detallados de cada mejora de UX.

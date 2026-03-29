@@ -51,7 +51,7 @@ const Metronome = () => {
           const aiUrl = `${API_URL}/ai/chat`;
           const messages = [{
             role: 'user', 
-            content: `Dime el BPM exacto y la tonalidad original de la canción "${title}" de "${artist}". Responde ESTRICTAMENTE con un solo objeto JSON válido en este formato: {"bpm":120, "key":"G"}. No agregues explicaciones ni Markdown (sin \`\`\`json).` 
+            content: `Dime el BPM oficial exacto y la tonalidad original de la canción "${title}" de "${artist}". Responde ESTRICTAMENTE con un solo objeto JSON válido en este formato: {"bpm":94, "key":"G"}. No agregues explicaciones ni Markdown (sin \`\`\`json). Si no estás seguro, busca la información más confiable para esta versión.` 
           }];
           
           const res = await fetch(aiUrl, {
@@ -123,6 +123,28 @@ const Metronome = () => {
       setCurrentBeat(0);
     }
   }, [isPlaying, beatsPerMeasure]);
+
+  const [taps, setTaps] = useState([]);
+
+  const handleTap = () => {
+    const now = Date.now();
+    let newTaps = [...taps, now];
+    if (newTaps.length > 1) {
+      const timeDiffMs = newTaps[newTaps.length - 1] - newTaps[0];
+      const avgTimePerTap = timeDiffMs / (newTaps.length - 1);
+      const calculatedBpm = Math.round(60000 / avgTimePerTap);
+      setBpm(Math.min(240, Math.max(40, calculatedBpm)));
+    }
+    if (newTaps.length > 8) newTaps.shift();
+    setTaps(newTaps);
+  };
+
+  useEffect(() => {
+    if (taps.length > 0) {
+      const timer = setTimeout(() => setTaps([]), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [taps]);
 
   const togglePlay = async () => {
     if (!isPlaying) {
@@ -232,17 +254,16 @@ const Metronome = () => {
 
           <button 
             onClick={togglePlay}
-            className={`flex items-center justify-center w-18 h-18 md:w-20 md:h-20 rounded-full transition-all active:scale-95 shadow-2xl ${
+            className={`flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full transition-all active:scale-95 shadow-2xl ${
               isPlaying 
                 ? 'bg-red-500/20 text-red-500 border-2 border-red-500/50 hover:bg-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.3)]' 
                 : 'bg-primary text-black hover:bg-primary-hover shadow-[0_0_30px_rgba(234,179,8,0.3)]'
             }`}
-            style={{ width: '72px', height: '72px' }}
           >
             {isPlaying ? (
-              <svg className="w-8 h-8" viewBox="0 0 24 24"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg>
+              <svg className="w-8 h-8 md:w-10 md:h-10" viewBox="0 0 24 24"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg>
             ) : (
-              <svg className="w-9 h-9 ml-1" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
+              <svg className="w-9 h-9 md:w-12 md:h-12 ml-1" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
             )}
           </button>
 
@@ -253,6 +274,15 @@ const Metronome = () => {
             +
           </button>
         </div>
+
+        <button
+          onClick={handleTap}
+          className={`mt-10 px-12 py-5 rounded-2xl text-xs font-black uppercase tracking-[0.3em] transition-all border select-none ${
+            taps.length > 0 ? 'bg-primary text-black shadow-lg shadow-primary/20 border-primary' : 'bg-white/5 text-gray-400 border-white/10 hover:border-primary/50 hover:text-primary'
+          } active:scale-95 active:bg-primary active:text-black`}
+        >
+          {taps.length > 0 ? `TAP (${taps.length})` : 'Tocar Tempo'}
+        </button>
       </div>
     </div>
   );

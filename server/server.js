@@ -107,18 +107,19 @@ app.post('/api/ai/generate-chords', async (req, res) => {
     
     const prompt = `Actúa como un músico profesional experto en transcribir acordes.
 Escribe la letra completa con los acordes para la canción "${title}" de "${artist}".
-REGLAS ESTRICTAS:
+
+REGLAS ESTRICTAS DE FORMATO:
 1. Escribe los nombres de las secciones en una línea propia y entre corchetes, por ejemplo: [INTRO], [VERSO 1], [CORO], [PUENTE].
-2. Los acordes DEBEN estar en una línea separada justo arriba de las palabras correspondientes de la letra, y DEBEN estar encerrados entre corchetes. NO pongas los acordes en la misma línea que la letra ni pegados a las palabras.
-Ejemplo de formato correcto:
-[G]                [C]
-Cuan grande es Él
+2. Los acordes DEBEN estar encerrados entre corchetes y DEBEN estar pegados JUSTO ANTES de la sílaba o palabra donde cambian, en la misma línea que la letra.
+   Ejemplo de formato correcto:
+   [G]Cuan grande es [C]Él
 3. Usa cifrado americano (C, Dm, G, F#m, etc.).
-4. Estima el BPM (Tempo) y la Tonalidad Original (Key) real de la canción.
-5. Devuelve ÚNICAMENTE un objeto JSON válido (sin Markdown) con esta estructura exacta:
+4. Proporciona el BPM (Tempo) y la Tonalidad Original (Key) EXACTOS de la canción. Si no estás seguro, busca en tu base de conocimiento el tempo oficial reportado para esta versión. Ejemplo: "94" en lugar de "70".
+5. Si detectas que la canción tiene un tempo de 1/2 o el doble, proporciona el tempo real (ej: si es 94 no pongas 47).
+6. Devuelve ÚNICAMENTE un objeto JSON válido (sin Markdown) con esta estructura exacta:
 {
-  "lyrics": "la letra con acordes aquí bajo todas las reglas anteriores",
-  "bpm": "120",
+  "lyrics": "la letra con los acordes inline aquí bajo todas las reglas anteriores",
+  "bpm": "94",
   "key": "G"
 }`;
 
