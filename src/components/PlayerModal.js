@@ -6,6 +6,7 @@ import Chord from '@tombatossals/react-chords/lib/Chord';
 import guitarDb from '@tombatossals/chords-db/lib/guitar.json';
 import { transposeText, formatLyricsForDisplay, NOTES } from '../utils/chordTransposer';
 import { useAuth } from '../context/AuthContext';
+import { extractYoutubeVideoId } from '../utils/youtube';
 
 const PlayerModal = ({ song, onClose }) => {
   const { isAdmin } = useAuth();
@@ -221,7 +222,7 @@ const PlayerModal = ({ song, onClose }) => {
 
   if (!song) return null;
 
-  const videoId = song.youtubeUrl ? song.youtubeUrl.split('v=')[1]?.split('&')[0] : null;
+  const videoId = extractYoutubeVideoId(song.youtubeUrl);
 
   const handleTranspose = (steps) => {
     setSemitones(steps);
