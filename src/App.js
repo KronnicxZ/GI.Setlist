@@ -21,7 +21,7 @@ function App() {
   const [setlists, setSetlists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('title');
+  const [sortBy, setSortBy] = useState('');
   const [selectedSetlist, setSelectedSetlist] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
   const [showSongForm, setShowSongForm] = useState(false);
@@ -114,10 +114,10 @@ function App() {
 
   const contextSongs = React.useMemo(() => {
     if (!selectedSetlist) return songs;
-    return songs.filter(song => selectedSetlist.songs.some(s => {
+    return selectedSetlist.songs.map(s => {
       const sId = s.id || s._id || s;
-      return sId === song.id || sId === song._id;
-    }));
+      return songs.find(song => (song.id || song._id) === sId);
+    }).filter(Boolean);
   }, [songs, selectedSetlist]);
 
   const filteredSongs = React.useMemo(() => {
@@ -138,6 +138,8 @@ function App() {
 
       return matchesSearch && matchesGenre;
     });
+
+    if (selectedSetlist) return list; // Maintain custom setlist order
 
     return list.sort((a, b) => {
       // Helper para comparar strings de forma segura
@@ -517,7 +519,7 @@ function App() {
                               <span className="font-bold text-sm truncate">{setlist.name}</span>
                               {setlist.date && (
                                 <span className="text-[10px] text-gray-500 font-medium tracking-wide">
-                                  {new Date(setlist.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                                  {new Date(setlist.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', timeZone: 'UTC' })}
                                 </span>
                               )}
                             </div>
@@ -581,7 +583,7 @@ function App() {
                   <div className="flex items-center space-x-3">
                     {selectedSetlist?.date && (
                       <span className="text-sm font-bold text-gray-400 bg-white/5 px-4 py-2 rounded-full border border-white/5">
-                        {new Date(selectedSetlist.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        {new Date(selectedSetlist.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}
                       </span>
                     )}
                     {selectedSetlist && (
