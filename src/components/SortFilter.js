@@ -35,7 +35,7 @@ const SortFilter = ({ onSortChange, compact = false }) => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`${compact ? 'w-10 h-10 flex items-center justify-center' : 'w-full h-[42px] px-4'} text-left text-white bg-white/5 border border-white/10 rounded-sub hover:bg-white/[0.08] focus:outline-none focus:border-primary/50 transition-all flex items-center justify-between`}
+        className={`${compact ? 'w-10 h-10 justify-center' : 'w-full h-[42px] px-4 justify-between'} flex items-center text-left text-white bg-white/5 border border-white/10 rounded-sub hover:bg-white/[0.08] focus:outline-none focus:border-primary/50 transition-all`}
         title={compact ? `Ordenar por: ${selectedOption}` : ''}
       >
         {!compact ? (
