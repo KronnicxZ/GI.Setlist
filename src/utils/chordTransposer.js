@@ -1,9 +1,9 @@
 const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-// Expresión regular mejorada para detectar acordes musicales
-// Detecta: Notas base (A-G), alteraciones (#, b, b5, #5), calidades (m, maj, sus, dim, etc), 
-// tensiones (2, 4, 5, 6, 7, 9, 11, 13), bajos (/) y variaciones comunes
-const CHORD_REGEX = /\b[A-G](?:b|#)?(?:maj|MAJ|Maj|MIN|Min|min|m|M|aug|AUG|Aug|dim|DIM|Dim|sus|SUS|Sus|add|ADD|Add|Δ)?[0-9]*(?:sus[24]|add[0-9]+)?(?:[\(\+]?[0-9]+[\)\+]?)*(?:\/[A-G](?:b|#)?)?\b/g;
+// Expresión regular mejorada para detectar acordes musicales con todas las variaciones
+// Detecta: Notas base (A-G), alteraciones (#, b), calidades (m, maj, sus, dim, aug, etc),
+// tensiones, alteraciones (b5, #9) y bajos (/). Evita problemas con bordes de palabra (\b) y caracteres especiales como #.
+const CHORD_REGEX = /(^|\s|\()([A-G](?:b|#)?(?:maj|MAJ|Maj|MIN|Min|min|m|M|aug|AUG|Aug|dim|DIM|Dim|sus|SUS|Sus|add|ADD|Add|Δ|º|°|ø)?[0-9]*(?:sus[24]|add[0-9]+)?(?:[\(\+]?[#b0-9]+[\)\+]?)*(?:\/[A-G](?:b|#)?)?)(?=$|\s|\)|\r|\n|,|\.)/g;
 
 // Función para normalizar un acorde a su forma con sostenidos
 const normalizeChord = (chord) => {
@@ -37,33 +37,40 @@ const transposeChord = (chord, semitones) => {
   return NOTES[newIndex] + modifier;
 };
 
+// Función para limpiar acordes mal formados manualmente (ej: [D]# -> [D#], [A]m7 -> [Am7])
+const fixMalformedChords = (text) => {
+  if (!text) return '';
+  const malformedRegex = /\[([A-G][b#]?[a-zA-Z0-9\+\-\/øº°]*)\]((?:#|b|m|maj|dim|aug|sus|add|M|[0-9]|\+|-|\/|ø|º|°)+)(?=$|\s|\)|\r|\n|,|\.)/gi;
+  return text.replace(malformedRegex, (match, inside, outside) => {
+    return `[${inside}${outside}]`;
+  });
+};
+
 // Función mágica para detectar y encerrar acordes entre corchetes
 const autoBracketChords = (text) => {
   if (!text) return '';
 
+  let cleanedText = fixMalformedChords(text);
+
   // Procesar línea por línea
-  return text.split('\n').map(line => {
+  return cleanedText.split('\n').map(line => {
     // Si la línea está vacía, retornar igual
     if (!line.trim()) return line;
 
     // Detectamos cuántos "acordes" potenciales hay
     const words = line.trim().split(/\s+/);
 
-    return line.replace(CHORD_REGEX, (match, offset, fullText) => {
-      // Verificar si ya tiene corchetes antes o después
-      const prevChar = fullText[offset - 1];
-      const nextChar = fullText[offset + match.length];
-
-      if (prevChar === '[' && nextChar === ']') {
-        return match; // Ya está encerrado
+    // Usar un bucle manual ya que CHORD_REGEX no soporta intersecciones bien con replace global si captura espacios
+    // Para simplificar, reemplazamos con la nueva lógica que captura prefijos
+    return line.replace(CHORD_REGEX, (match, prefix, chordMatch) => {
+      const fullTextMatch = prefix + chordMatch;
+      
+      // Evitar encerrar palabras sueltas como "A" o "E" o "I" si parecen parte de una oración normal (y la línea tiene muchas palabras)
+      if ((chordMatch === 'A' || chordMatch === 'E' || chordMatch === 'I') && words.length > 4 && !line.includes('  ')) {
+        return fullTextMatch;
       }
 
-      // Evitar encerrar palabras sueltas como "A" o "I" si parecen parte de una oración
-      if ((match === 'A' || match === 'E' || match === 'I') && words.length > 4 && !line.includes('  ')) {
-        return match;
-      }
-
-      return `[${match}]`;
+      return `${prefix}[${chordMatch}]`;
     });
   }).join('\n');
 };
@@ -75,8 +82,10 @@ const SECTION_REGEX = /\b(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interl
 const transposeText = (text, semitones) => {
   if (!text) return '';
 
+  let cleaned = fixMalformedChords(text);
+
   // El regex busca patrones [Acorde] incluso si están rodeados de HTML
-  return text.replace(/\[([^\]]+)\]/g, (match, chord) => {
+  return cleaned.replace(/\[([^\]]+)\]/g, (match, chord) => {
     const transposedChord = transposeChord(chord, semitones);
     return `[${transposedChord}]`;
   });
@@ -86,7 +95,7 @@ const transposeText = (text, semitones) => {
 const formatLyricsForDisplay = (text) => {
   if (!text) return '';
 
-  let formatted = text;
+  let formatted = fixMalformedChords(text);
 
   // 1. Procesar secciones: Detectar [Intro] o Intro: o Intro al inicio de línea
   // Soporta prefijos como "Pre-" (ej. Pre-Coro) y sufijos numéricos (ej. Verso II)
@@ -101,8 +110,12 @@ const formatLyricsForDisplay = (text) => {
     return `<span class="section-label">${cleanSection}</span>`;
   });
 
-  // 2. Procesar acordes restantes: [G] -> <span class="chord">[G]</span>
-  // Solo procesamos lo que queda con corchetes (que no sean las secciones ya procesadas)
+  // 2. Procesar acordes pegados a palabras (Estilo Inline: [G]Cuan) -> renderizados arriba
+  formatted = formatted.replace(/\[([^\]]+)\]([^\s<\[]+)/g, (match, chord, word) => {
+    return `<span class="chord-wrapper"><span class="lyric-word">${word}</span><span class="chord">[${chord}]</span></span>`;
+  });
+
+  // 3. Procesar acordes restantes (que están sueltos o en su propia línea): [G] -> <span class="chord">[G]</span>
   formatted = formatted.replace(/\[([^\]]+)\]/g, (match, content) => {
     return `<span class="chord">[${content}]</span>`;
   });

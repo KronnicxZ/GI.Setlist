@@ -94,6 +94,93 @@ app.get('/api/youtube/details', async (req, res) => {
     }
 });
 
+// AI Chord Generation using Groq & OpenRouter Fallback
+app.post('/api/ai/generate-chords', async (req, res) => {
+    const { title, artist } = req.body;
+    
+    if (!title || !artist) {
+        return res.status(400).json({ error: 'Title and artist are required' });
+    }
+
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+    
+    const prompt = `Actúa como un músico profesional experto en transcribir acordes.
+Escribe la letra completa con los acordes para la canción "${title}" de "${artist}".
+REGLAS ESTRICTAS:
+1. Escribe los nombres de las secciones entre corchetes, por ejemplo: [INTRO], [VERSO 1], [CORO], [PUENTE].
+2. Los acordes DEBEN ir exactamente antes de la sílaba o palabra donde se tocan y DEBEN estar encerrados entre corchetes. Ejemplo: "[G]Cuan grande es [C]Él". NO pongas los acordes en una línea separada arriba de la letra.
+3. Usa cifrado americano (C, Dm, G, F#m, etc.).
+4. Estima el BPM (Tempo) y la Tonalidad Original (Key) real de la canción.
+5. Devuelve ÚNICAMENTE un objeto JSON válido (sin Markdown) con esta estructura exacta:
+{
+  "lyrics": "la letra con acordes aquí bajo todas las reglas anteriores",
+  "bpm": "120",
+  "key": "G"
+}`;
+
+    try {
+        // First try: Groq (Blazing fast Llama 3)
+        const groqResponse = await axios.post(
+            'https://api.groq.com/openai/v1/chat/completions',
+            {
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.3,
+                max_tokens: 2000
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${GROQ_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        if (groqResponse.data.choices && groqResponse.data.choices.length > 0) {
+            let content = groqResponse.data.choices[0].message.content;
+            content = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const jsonResp = JSON.parse(content);
+            return res.json(jsonResp);
+        }
+    } catch (err) {
+        console.warn('Groq failed, falling back to OpenRouter...', err.message);
+        
+        try {
+            // Fallback: OpenRouter
+            const fallbackResponse = await axios.post(
+                'https://openrouter.ai/api/v1/chat/completions',
+                {
+                    model: 'google/gemini-2.5-flash',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.3,
+                    max_tokens: 2000
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                        'HTTP-Referer': 'http://localhost:3000',
+                        'X-Title': 'GI Setlist',
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (fallbackResponse.data.choices && fallbackResponse.data.choices.length > 0) {
+                let content = fallbackResponse.data.choices[0].message.content;
+                content = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+                const jsonResp = JSON.parse(content);
+                return res.json(jsonResp);
+            } else {
+                return res.status(500).json({ error: 'Error from OpenRouter AI service' });
+            }
+        } catch (fallbackErr) {
+            console.error('OpenRouter Fallback Error:', fallbackErr.response ? fallbackErr.response.data : fallbackErr.message);
+            return res.status(500).json({ error: 'Error generating chords with both Groq and OpenRouter' });
+        }
+    }
+});
+
 // API Routes for Songs
 app.get('/api/songs', async (req, res) => {
     try {
@@ -216,5 +303,47 @@ app.post('/api/restore', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// AI Chat Tool Route
+app.post('/api/ai/chat', async (req, res) => {
+    const { messages } = req.body;
+    
+    if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: 'Messages array is required' });
+    }
+
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    
+    try {
+        const axios = require('axios');
+        const groqResponse = await axios.post(
+            'https://api.groq.com/openai/v1/chat/completions',
+            {
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: 'Eres GI Setlist Assistant, un experto musical. Ayudas de forma amable y concisa a mejorar arreglos, buscar información de BPMs o tonos de canciones, o iterar acordes.' },
+                    ...messages
+                ],
+                temperature: 0.7,
+                max_tokens: 1500
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${GROQ_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        if (groqResponse.data.choices && groqResponse.data.choices.length > 0) {
+            return res.json({ response: groqResponse.data.choices[0].message.content });
+        } else {
+            return res.status(500).json({ error: 'No response from Groq' });
+        }
+    } catch (err) {
+        console.error('Groq Chat Error:', err.message);
+        return res.status(500).json({ error: 'Error generating chat response' });
     }
 });

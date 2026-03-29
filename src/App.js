@@ -11,6 +11,7 @@ import ConfirmationModal from './components/ConfirmationModal';
 import DuplicateModal from './components/DuplicateModal';
 import AdminPanel from './components/AdminPanel';
 import CustomAlert from './components/CustomAlert';
+import ToolsScreen from './components/tools/ToolsScreen';
 import { useAuth } from './context/AuthContext';
 import { extractYoutubeVideoId } from './utils/youtube';
 
@@ -46,8 +47,7 @@ function App() {
 
   const { isAdmin, logout } = useAuth();
 
-  const API_URL = process.env.REACT_APP_API_URL ||
-    ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000/api' : '/api');
+  const API_URL = process.env.REACT_APP_API_URL || '/api';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -502,12 +502,12 @@ function App() {
                 <div>
                   {!isSidebarCollapsed && <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4 px-4">Mis Setlists</h2>}
                   <div className="space-y-1">
-                    <div onClick={() => setSelectedSetlist(null)} className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-2' : 'space-x-3 px-4 py-3 rounded-sub'} cursor-pointer transition-all ${isSidebarCollapsed ? (!selectedSetlist ? 'text-primary' : 'text-gray-400 hover:text-white') : (!selectedSetlist ? 'bg-primary/10 text-primary border-l-2 border-primary' : 'text-gray-400 hover:bg-white/[0.03] hover:text-white')}`} title={isSidebarCollapsed ? "Biblioteca Global" : ""}>
+                    <div onClick={() => { setActiveTab('library'); setSelectedSetlist(null); }} className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-2' : 'space-x-3 px-4 py-3 rounded-sub'} cursor-pointer transition-all ${isSidebarCollapsed ? (!selectedSetlist && activeTab === 'library' ? 'text-primary' : 'text-gray-400 hover:text-white') : (!selectedSetlist && activeTab === 'library' ? 'bg-primary/10 text-primary border-l-2 border-primary' : 'text-gray-400 hover:bg-white/[0.03] hover:text-white')}`} title={isSidebarCollapsed ? "Biblioteca Global" : ""}>
                       <div className={`${isSidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex-shrink-0 flex items-center justify-center ${!selectedSetlist ? 'bg-primary/20 shadow-[0_0_15px_rgba(234,179,8,0.1)]' : 'bg-white/5'}`}><svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M12,13A5,5 0 0,1 7,8H9A3,3 0 0,0 12,11A3,3 0 0,0 15,8H17A5,5 0 0,1 12,13M12,3A3,3 0 0,1 15,6H9A3,3 0 0,1 12,3M19,6H17A5,5 0 0,0 12,1A5,5 0 0,0 7,6H5C3.89,6 3,6.89 3,8V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V8C21,6.89 20.11,6 19,6Z" /></svg></div>
                       {!isSidebarCollapsed && <span className="font-medium text-sm">Biblioteca Global</span>}
                     </div>
                     {setlists.map((setlist) => (
-                      <div key={setlist.id} className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-2' : 'justify-between px-4 py-2 rounded-sub'} group transition-all ${isSidebarCollapsed ? (selectedSetlist?.id === setlist.id ? 'text-primary' : 'text-gray-400 hover:text-white') : (selectedSetlist?.id === setlist.id ? 'bg-primary/10 text-primary border-l-2 border-primary' : 'text-gray-400 hover:bg-white/[0.03] hover:text-white')} cursor-pointer`} title={isSidebarCollapsed ? setlist.name : ""} onClick={() => setSelectedSetlist(setlist)}>
+                      <div key={setlist.id} className={`flex items-center ${isSidebarCollapsed ? 'justify-center py-2' : 'justify-between px-4 py-2 rounded-sub'} group transition-all ${isSidebarCollapsed ? (selectedSetlist?.id === setlist.id && activeTab === 'library' ? 'text-primary' : 'text-gray-400 hover:text-white') : (selectedSetlist?.id === setlist.id && activeTab === 'library' ? 'bg-primary/10 text-primary border-l-2 border-primary' : 'text-gray-400 hover:bg-white/[0.03] hover:text-white')} cursor-pointer`} title={isSidebarCollapsed ? setlist.name : ""} onClick={() => { setActiveTab('library'); setSelectedSetlist(setlist); }}>
                         <div className={`flex items-center ${isSidebarCollapsed ? '' : 'space-x-3'} flex-1 min-w-0`}>
                           <div className={`${isSidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex-shrink-0 flex items-center justify-center ${selectedSetlist?.id === setlist.id ? 'bg-primary/20 shadow-[0_0_15px_rgba(234,179,8,0.1)]' : 'bg-white/5'}`}><svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M15,6H3V8H15V6M15,10H3V12H15V10M3,16H11V14H3V16M17,6V14.18C16.69,14.07 16.35,14 16,14A3,3 0 0,0 13,17A3,3 0 0,0 16,20A3,3 0 0,0 19,17V8H22V6H17Z" /></svg></div>
                           {!isSidebarCollapsed && (
@@ -532,6 +532,22 @@ function App() {
                         )}
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div>
+                  {!isSidebarCollapsed && <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4 px-4 mt-6">Utilidades</h2>}
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => { setActiveTab('tools'); setSelectedSetlist(null); }}
+                      className={`flex items-center w-full ${isSidebarCollapsed ? 'justify-center py-2' : 'space-x-3 px-4 py-3 rounded-sub hover:bg-white/[0.03] text-gray-400 hover:text-white transition-all'} ${activeTab === 'tools' && !isSidebarCollapsed ? 'bg-primary/10 text-primary border-l-2 border-primary' : ''}`}
+                      title={isSidebarCollapsed ? "Herramientas" : ""}
+                    >
+                      <div className={`${isSidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg bg-white/5 flex-shrink-0 flex items-center justify-center ${activeTab === 'tools' ? 'text-primary border-primary' : ''}`}>
+                        <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4Z" /></svg>
+                      </div>
+                      {!isSidebarCollapsed && <span className="font-medium">Herramientas</span>}
+                    </button>
                   </div>
                 </div>
               </nav>
@@ -573,11 +589,13 @@ function App() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-4 flex-1 max-w-2xl justify-end">
-                <div className="flex-1"><SearchBar value={searchTerm} onSearch={setSearchTerm} /></div>
-                <div className="min-w-[160px]"><SortFilter onSortChange={setSortBy} /></div>
-                {isAdmin && <button onClick={() => { setEditingSong(null); setShowSongForm(true); }} className="bg-primary text-black h-[42px] px-6 rounded-sub font-bold flex items-center justify-center space-x-2 hover:bg-primary-hover shadow-lg active:scale-95 transition-all"><svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg><span>Nueva</span></button>}
-              </div>
+              {activeTab !== 'tools' && activeTab !== 'admin' && (
+                <div className="flex items-center gap-4 flex-1 max-w-2xl justify-end">
+                  <div className="flex-1"><SearchBar value={searchTerm} onSearch={setSearchTerm} /></div>
+                  <div className="min-w-[160px]"><SortFilter onSortChange={setSortBy} /></div>
+                  {isAdmin && <button onClick={() => { setEditingSong(null); setShowSongForm(true); }} className="bg-primary text-black h-[42px] px-6 rounded-sub font-bold flex items-center justify-center space-x-2 hover:bg-primary-hover shadow-lg active:scale-95 transition-all"><svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg><span>Nueva</span></button>}
+                </div>
+              )}
             </div>
           </header>
 
@@ -594,7 +612,7 @@ function App() {
                 <div className="flex items-center">
                   <h1 className="text-xl font-black tracking-tighter flex items-center">
                     <span className="text-white">GI</span>
-                    <span className="text-primary ml-1.5 line-clamp-1">{activeTab === 'admin' ? 'Perfil' : activeTab === 'setlists' ? 'Setlists' : activeTab === 'search' ? 'Buscador' : (selectedSetlist ? selectedSetlist.name : 'Setlist')}</span>
+                    <span className="text-primary ml-1.5 line-clamp-1">{activeTab === 'admin' ? 'Perfil' : activeTab === 'setlists' ? 'Setlists' : activeTab === 'tools' ? 'Herramientas' : activeTab === 'search' ? 'Buscador' : (selectedSetlist ? selectedSetlist.name : 'Setlist')}</span>
                   </h1>
                 </div>
               </div>
@@ -643,23 +661,25 @@ function App() {
           </div>
 
           {/* Genre Tabs Filter (Desktop Only now) */}
-          <div className="hidden md:block px-8 mt-4 no-print">
-            <div className="max-w-[1800px] mx-auto flex items-center space-x-2 bg-white/5 p-1 rounded-xl w-fit border border-white/5">
-              {['Todas', 'Alabanza', 'Adoración'].map(genre => {
-                const normalize = (text) => text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                const count = genre === 'Todas' ? contextSongs.length : contextSongs.filter(s => normalize(s.genre) === normalize(genre)).length;
-                return (
-                  <button
-                    key={genre}
-                    onClick={() => setGenreFilter(genre)}
-                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${genreFilter === genre ? 'bg-primary text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                  >
-                    {genre} ({count})
-                  </button>
-                );
-              })}
+          {(activeTab === 'library' || activeTab === 'search') && (
+            <div className="hidden md:block px-8 mt-4 no-print">
+              <div className="max-w-[1800px] mx-auto flex items-center space-x-2 bg-white/5 p-1 rounded-xl w-fit border border-white/5">
+                {['Todas', 'Alabanza', 'Adoración'].map(genre => {
+                  const normalize = (text) => text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                  const count = genre === 'Todas' ? contextSongs.length : contextSongs.filter(s => normalize(s.genre) === normalize(genre)).length;
+                  return (
+                    <button
+                      key={genre}
+                      onClick={() => setGenreFilter(genre)}
+                      className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${genreFilter === genre ? 'bg-primary text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                    >
+                      {genre} ({count})
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Mobile Screens Container */}
           <main className="flex-1 w-full max-w-[1800px] mx-auto overflow-y-auto overflow-x-hidden pt-2 md:pt-8 px-4 md:px-8 custom-scrollbar pb-40 md:pb-8">
@@ -758,6 +778,13 @@ function App() {
                 <BibleVerse isCollapsed={false} />
               </div>
             </div>
+
+            {/* Herramientas (Tools) Screen */}
+            {activeTab === 'tools' && (
+              <div className="animate-fade-in pb-20">
+                <ToolsScreen />
+              </div>
+            )}
           </main>
 
           {/* Mobile Bottom Navigation Bar */}
@@ -783,6 +810,13 @@ function App() {
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M15,6H3V8H15V6M15,10H3V12H15V10M3,16H11V14H3V16M17,6V14.18C16.69,14.07 16.35,14 16,14A3,3 0 0,0 13,17A3,3 0 0,0 16,20A3,3 0 0,0 19,17V8H22V6H17Z" /></svg>
                 <span className="text-[8px] font-bold mt-0.5">Listas</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab('tools'); setSelectedSong(null); }}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all ${activeTab === 'tools' ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4Z" /></svg>
+                <span className="text-[8px] font-bold mt-0.5">Herram.</span>
               </button>
               {isAdmin && (
                 <button

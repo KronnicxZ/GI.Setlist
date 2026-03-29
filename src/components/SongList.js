@@ -73,6 +73,33 @@ const SongCard = memo(({
   );
 });
 
+const EmptyState = ({ onClearFilters }) => (
+  <div className="flex flex-col items-center justify-center py-20 px-4 text-center w-full animate-fade-in">
+    <div className="w-24 h-24 mb-6 rounded-full bg-gradient-to-tr from-primary/20 to-primary/40 flex items-center justify-center p-0.5 relative group">
+      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/30 transition-all duration-500"></div>
+      <div className="w-full h-full bg-[#161616] rounded-full flex items-center justify-center relative z-10 border border-primary/20">
+        <svg className="w-10 h-10 text-primary opacity-90 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M16 9h-3V3h-2v6H8V3H6v6c0 1.66 1.34 3 3 3v9h2v-9c1.66 0 3-1.34 3-3zM21 3h-2v11h-2V3h-2v11c0 1.66 1.34 3 3 3v4h2v-4c1.66 0 3-1.34 3-3V3z" />
+        </svg>
+      </div>
+    </div>
+    <h3 className="text-2xl font-black text-white mb-2 tracking-tight">
+      Aún no hay canciones aquí
+    </h3>
+    <p className="text-gray-400 max-w-sm mb-8 text-sm leading-relaxed">
+      Sincroniza tus datos, importa un archivo JSON de respaldo o utiliza el panel de administrador para añadir tu primer tema musical.
+    </p>
+    {onClearFilters && (
+      <button 
+        onClick={onClearFilters}
+        className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.05)]"
+      >
+        Limpiar Filtros de Búsqueda
+      </button>
+    )}
+  </div>
+);
+
 const SongList = ({
   songs,
   onSongSelect,
@@ -205,7 +232,13 @@ const SongList = ({
                   <td className="py-4 px-6 text-center"><div className="w-6 h-4 bg-white/5 rounded mx-auto"></div></td>
                   {isAdmin && <td className="py-4 px-6 text-right"><div className="w-8 h-8 bg-white/5 rounded-lg ml-auto"></div></td>}
                 </tr>
-              )) : songs.map((song) => (
+              )) : songs.length === 0 ? (
+                <tr>
+                  <td colSpan={isAdmin ? 7 : 6} className="py-12">
+                     <EmptyState onClearFilters={onClearFilters} />
+                  </td>
+                </tr>
+              ) : songs.map((song) => (
                 <tr
                   key={song.id || song._id}
                   className={`group hover:bg-white/[0.02] cursor-pointer relative ${openMenuId === (song.id || song._id) ? 'z-[60]' : 'z-10'}`}
@@ -236,7 +269,7 @@ const SongList = ({
           {loading ? [...Array(6)].map((_, i) => (
             <div key={`m-sk-${i}`} className="bg-white/5 rounded-2xl p-4 animate-pulse h-[74px]"></div>
           )) : songs.length === 0 ? (
-            <div className="py-12 text-center text-gray-500 text-sm italic">No se encontraron temas</div>
+             <EmptyState onClearFilters={onClearFilters} />
           ) : (
             songs.map((song) => (
               <SongCard

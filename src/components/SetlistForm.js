@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 const SetlistForm = ({ songs, initialData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState(initialData ? {
     ...initialData,
-    date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : ''
+    date: initialData.date ? (new Date(initialData.date).toISOString().split('T')[0] || '') : '',
+    songs: (initialData.songs || []).map(s => typeof s === 'object' ? (s.id || s._id) : s)
   } : {
     name: '',
     description: '',
@@ -13,6 +14,11 @@ const SetlistForm = ({ songs, initialData, onSubmit, onCancel }) => {
 
   const [showCalendar, setShowCalendar] = useState(false);
   const calendarRef = useRef(null);
+  
+  // States for search and drag-and-drop
+  const [searchQuery, setSearchQuery] = useState('');
+  const [draggedIdx, setDraggedIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
 
   // Lógica para el calendario personalizado
   const [viewDate, setViewDate] = useState(formData.date ? new Date(formData.date + 'T00:00:00') : new Date());
@@ -65,7 +71,46 @@ const SetlistForm = ({ songs, initialData, onSubmit, onCancel }) => {
     }));
   };
 
+  const handleDragStart = (e, index) => {
+    setDraggedIdx(index);
+    // Optional: make it look slightly transparent when dragging
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    setDragOverIdx(index);
+  };
+
+  const handleDrop = (e, targetIdx) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx) {
+      setDraggedIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+    
+    const newSongs = [...formData.songs];
+    const [removed] = newSongs.splice(draggedIdx, 1);
+    newSongs.splice(targetIdx, 0, removed);
+    
+    setFormData(prev => ({ ...prev, songs: newSongs }));
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
+
   const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+  const filteredAvailableSongs = songs.filter(s => 
+    !formData.songs.includes(s.id) &&
+    ((s.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+     (s.artist || '').toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-fade-in">
@@ -178,54 +223,111 @@ const SetlistForm = ({ songs, initialData, onSubmit, onCancel }) => {
             />
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Seleccionar Canciones</label>
-              <span className="text-[10px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
-                {formData.songs.length} seleccionadas
-              </span>
-            </div>
+          <div className="space-y-6">
+            
+            {/* Canciones Seleccionadas (Con DnD) */}
+            {formData.songs.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Orden del Setlist <span className="text-gray-600 lowercase">(arrastra)</span></label>
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                    {formData.songs.length} seleccionadas
+                  </span>
+                </div>
 
-            <div className="grid grid-cols-1 gap-3 pr-2">
-              {songs.map(song => (
-                <label
-                  key={song.id}
-                  className={`flex items-center p-4 rounded-sub border transition-all cursor-pointer group ${formData.songs.includes(song.id)
-                    ? 'bg-primary/10 border-primary/30'
-                    : 'bg-white/5 border-white/5 hover:border-white/10'
-                    }`}
-                >
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={formData.songs.includes(song.id)}
-                      onChange={() => handleSongToggle(song.id)}
-                      className="hidden"
-                    />
-                    <div className={`w-5 h-5 border-2 rounded transition-all flex items-center justify-center ${formData.songs.includes(song.id)
-                      ? 'bg-primary border-primary shadow-lg shadow-primary/20'
-                      : 'border-white/10 group-hover:border-primary/40'
-                      }`}>
-                      {formData.songs.includes(song.id) && (
-                        <svg className="w-3 h-3 text-black" viewBox="0 0 24 24">
-                          <path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <div className={`text-sm font-bold transition-colors ${formData.songs.includes(song.id) ? 'text-primary' : 'text-white'
-                      }`}>
-                      {song.title}
-                    </div>
-                    <div className="text-xs text-gray-500">{song.artist || 'Artista desconocido'}</div>
-                  </div>
-                  <div className="text-right">
-                    {song.key && <div className="text-[10px] font-bold text-primary/80 uppercase mb-1">{song.key}</div>}
-                    {song.bpm && <div className="text-[10px] font-mono text-gray-500">{song.bpm} BPM</div>}
-                  </div>
-                </label>
-              ))}
+                <div className="flex flex-col gap-2 pr-2">
+                  {formData.songs.map((songId, idx) => {
+                    const song = songs.find(s => s.id === songId);
+                    if (!song) return null;
+
+                    return (
+                      <div
+                        key={song.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={(e) => handleDragOver(e, idx)}
+                        onDrop={(e) => handleDrop(e, idx)}
+                        onDragEnd={handleDragEnd}
+                        className={`flex items-center p-3 rounded-sub border transition-all cursor-move bg-primary/5 ${
+                          dragOverIdx === idx ? 'border-primary border-t-2 scale-[1.02] shadow-xl z-10' : 'border-primary/20 hover:border-primary/40'
+                        } ${draggedIdx === idx ? 'opacity-50' : 'opacity-100'}`}
+                      >
+                         <div className="text-primary/50 mr-3 flex-shrink-0">
+                           <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M7,19V17H9V19H7M11,19V17H13V19H11M15,19V17H17V19H15M7,15V13H9V15H7M11,15V13H13V15H11M15,15V13H17V15H15M7,11V9H9V11H7M11,11V9H13V11H11M15,11V9H17V11H15M7,7V5H9V7H7M11,7V5H13V7H11M15,7V5H17V7H15Z" /></svg>
+                         </div>
+                         
+                         <div className="flex-1 min-w-0 flex items-center justify-between pointer-events-none">
+                            <div className="truncate pr-4">
+                              <div className="text-sm font-bold text-primary truncate">{song.title}</div>
+                              <div className="text-xs text-gray-500 truncate">{song.artist || 'Artista desconocido'}</div>
+                            </div>
+                            <div className="text-right flex-shrink-0 text-gray-500 text-xs font-mono w-12 hidden sm:block">
+                              #{idx + 1}
+                            </div>
+                         </div>
+                         
+                         <button type="button" onClick={() => handleSongToggle(song.id)} className="p-2 ml-2 text-gray-500 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0 group">
+                            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
+                         </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Añadir Canciones */}
+            <div className="space-y-3 pt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Añadir Canciones</label>
+                <div className="relative w-full sm:w-64">
+                   <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" viewBox="0 0 24 24"><path fill="currentColor" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+                   <input 
+                      type="text" 
+                      placeholder="Buscar repertorio..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 bg-black/30 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-primary/50 focus:bg-white/[0.08] transition-all"
+                   />
+                </div>
+              </div>
+
+              {filteredAvailableSongs.length === 0 ? (
+                 <div className="text-center py-8 text-gray-500 text-sm italic border border-white/5 rounded-sub border-dashed">
+                   {searchQuery ? 'No se encontraron más canciones' : 'Todas las canciones ya están en el setlist'}
+                 </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 pr-2">
+                  {filteredAvailableSongs.map(song => (
+                    <label
+                      key={song.id}
+                      className="flex items-center p-3 rounded-sub border bg-white/5 border-white/5 hover:border-white/20 transition-all cursor-pointer group"
+                    >
+                      <div className="relative flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          onChange={() => handleSongToggle(song.id)}
+                          className="hidden"
+                        />
+                        <div className="w-5 h-5 border-2 rounded transition-all flex items-center justify-center border-white/20 text-white group-hover:border-primary/50 group-hover:text-primary">
+                          <svg className="w-3 h-3 opacity-0 group-hover:opacity-100" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
+                        </div>
+                      </div>
+                      <div className="ml-4 flex-1 min-w-0">
+                        <div className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors truncate">
+                          {song.title}
+                        </div>
+                        <div className="text-xs text-gray-600 truncate">{song.artist || 'Artista desconocido'}</div>
+                      </div>
+                      <div className="text-right flex-shrink-0 ml-4 hidden sm:block">
+                        {song.key && <div className="text-[10px] font-bold text-gray-500 uppercase mb-0.5">{song.key}</div>}
+                        {song.bpm && <div className="text-[10px] font-mono text-gray-600">{song.bpm} BPM</div>}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </form>

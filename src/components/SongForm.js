@@ -35,6 +35,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
   }, [initialData]);
 
   const [loadingVideo, setLoadingVideo] = useState(false);
+  const [loadingAI, setLoadingAI] = useState(false);
   const [videoId, setVideoId] = useState(extractYoutubeVideoId(initialData?.youtubeUrl));
   const [showGenreMenu, setShowGenreMenu] = useState(false);
   const quillRef = useRef(null);
@@ -276,6 +277,71 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
               />
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={async () => {
+              if (!formData.title || !formData.artist) {
+                alert("Por favor ingresa primero el Título y Artista.");
+                return;
+              }
+              setLoadingAI(true);
+              try {
+                // Determine base URL, local development proxy or prod URL.
+                const url = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api/ai/generate-chords` : `/api/ai/generate-chords`;
+                
+                const res = await fetch(url, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ title: formData.title, artist: formData.artist })
+                });
+                
+                const data = await res.json();
+                
+                if (data.lyrics) {
+                  // Text formatting directly to Quill
+                  const plainText = data.lyrics;
+                  const htmlProcessed = formatLyricsForQuill(plainText)
+                    .split('\n')
+                    .map(line => {
+                      const trimmed = line.trim();
+                      if (trimmed === '') return '<p><br></p>';
+                      return `<p>${line}</p>`;
+                    })
+                    .join('');
+                    
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    lyrics: prev.lyrics && prev.lyrics !== '<p><br></p>' 
+                      ? prev.lyrics + htmlProcessed 
+                      : htmlProcessed,
+                    bpm: data.bpm || prev.bpm,
+                    originalKey: data.key || prev.originalKey,
+                    key: data.key || prev.key
+                  }));
+                } else {
+                  alert(data.error || 'Error al generar letra.');
+                }
+              } catch(e) {
+                alert('No se pudo conectar con el servidor.');
+              }
+              setLoadingAI(false);
+            }}
+            disabled={loadingAI || !formData.title || !formData.artist}
+            className="w-full mt-2 flex justify-center items-center space-x-2 px-5 py-3.5 bg-gradient-to-r from-purple-500/20 to-primary/20 border border-purple-500/30 rounded-sub text-white hover:bg-purple-500/30 disabled:opacity-50 transition-all font-bold text-sm shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+          >
+            {loadingAI ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Generando con IA...</span>
+                </>
+            ) : (
+                <>
+                  <span>✨</span>
+                  <span>Generar Letra y Acordes con IA (Estilo Chordify)</span>
+                </>
+            )}
+          </button>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">

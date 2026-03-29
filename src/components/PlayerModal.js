@@ -137,19 +137,17 @@ const PlayerModal = ({ song, onClose }) => {
 
     const suffixMap = {
       '': 'major',
+      'M': 'major',
+      'maj': 'major',
       'm': 'minor',
-      '7': '7',
-      'm7': 'minor7',
-      'maj7': 'maj7',
-      'sus2': 'sus2',
-      'sus4': 'sus4',
-      'add9': 'add9',
-      'dim': 'diminished',
-      'aug': 'augmented',
-      '6': '6',
-      '9': '9',
-      '11': '11',
-      '13': '13'
+      'min': 'minor',
+      '-': 'minor',
+      'M7': 'maj7',
+      'sus': 'sus4',
+      'º': 'dim',
+      '°': 'dim',
+      'ø': 'm7b5',
+      '+': 'aug'
     };
 
     let mappedSuffix = suffixMap[suffix] || suffix;
@@ -159,7 +157,13 @@ const PlayerModal = ({ song, onClose }) => {
 
     let chordInfo = keyData.find(c => c.suffix === mappedSuffix);
 
-    if (!chordInfo && suffix.startsWith('m')) {
+    // Fallback: Si tiene un bajo (ej: m7/G), intentamos mostrar el acorde sin el bajo para que la app no colapse
+    if (!chordInfo && mappedSuffix.includes('/')) {
+      const fallbackSuffix = mappedSuffix.split('/')[0];
+      chordInfo = keyData.find(c => c.suffix === (suffixMap[fallbackSuffix] || fallbackSuffix));
+    }
+
+    if (!chordInfo && mappedSuffix.startsWith('m')) {
       chordInfo = keyData.find(c => c.suffix === 'minor');
     }
 
