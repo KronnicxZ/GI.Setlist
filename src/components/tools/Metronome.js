@@ -47,7 +47,8 @@ const Metronome = () => {
           let artist = details.channelTitle.replace(' - Topic', '');
           setDetectedTitle(`${title} - ${artist}`);
 
-          const aiUrl = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api/ai/chat` : `/api/ai/chat`;
+          const API_URL = process.env.REACT_APP_API_URL || '/api';
+          const aiUrl = `${API_URL}/ai/chat`;
           const messages = [{
             role: 'user', 
             content: `Dime el BPM exacto y la tonalidad original de la canción "${title}" de "${artist}". Responde ESTRICTAMENTE con un solo objeto JSON válido en este formato: {"bpm":120, "key":"G"}. No agregues explicaciones ni Markdown (sin \`\`\`json).` 

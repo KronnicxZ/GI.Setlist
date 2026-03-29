@@ -288,7 +288,9 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
               setLoadingAI(true);
               try {
                 // Determine base URL, local development proxy or prod URL.
-                const url = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api/ai/generate-chords` : `/api/ai/generate-chords`;
+                // Use the same URL construction as in App.js for consistency
+                const API_URL = process.env.REACT_APP_API_URL || '/api';
+                const url = `${API_URL}/ai/generate-chords`;
                 
                 const res = await fetch(url, {
                   method: 'POST',

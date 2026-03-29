@@ -35,7 +35,8 @@ const ChatAI = () => {
     setLoading(true);
 
     try {
-      const url = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api/ai/chat` : `/api/ai/chat`;
+      const API_URL = process.env.REACT_APP_API_URL || '/api';
+      const url = `${API_URL}/ai/chat`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
