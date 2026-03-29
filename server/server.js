@@ -108,8 +108,11 @@ app.post('/api/ai/generate-chords', async (req, res) => {
     const prompt = `Actúa como un músico profesional experto en transcribir acordes.
 Escribe la letra completa con los acordes para la canción "${title}" de "${artist}".
 REGLAS ESTRICTAS:
-1. Escribe los nombres de las secciones entre corchetes, por ejemplo: [INTRO], [VERSO 1], [CORO], [PUENTE].
-2. Los acordes DEBEN ir exactamente antes de la sílaba o palabra donde se tocan y DEBEN estar encerrados entre corchetes. Ejemplo: "[G]Cuan grande es [C]Él". NO pongas los acordes en una línea separada arriba de la letra.
+1. Escribe los nombres de las secciones en una línea propia y entre corchetes, por ejemplo: [INTRO], [VERSO 1], [CORO], [PUENTE].
+2. Los acordes DEBEN estar en una línea separada justo arriba de las palabras correspondientes de la letra, y DEBEN estar encerrados entre corchetes. NO pongas los acordes en la misma línea que la letra ni pegados a las palabras.
+Ejemplo de formato correcto:
+[G]                [C]
+Cuan grande es Él
 3. Usa cifrado americano (C, Dm, G, F#m, etc.).
 4. Estima el BPM (Tempo) y la Tonalidad Original (Key) real de la canción.
 5. Devuelve ÚNICAMENTE un objeto JSON válido (sin Markdown) con esta estructura exacta:
@@ -317,13 +320,26 @@ app.post('/api/ai/chat', async (req, res) => {
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
     
     try {
+        // Fetch current songs from DB to give context
+        const songs = await Song.find({}, 'title artist genre key bpm lyrics');
+        const songList = songs.map(s => `${s.title} - ${s.artist} (Tono: ${s.key}, BPM: ${s.bpm})`).join('\n');
+        
+        const systemPrompt = `Eres GI Setlist Assistant, un experto musical en música Cristiana (Worship, Alabanza y Adoración).
+Tu objetivo es ayudar al usuario con recomendaciones musicales, progresiones, buscar información de BPMs o tonos, y armar setlists o iterar acordes.
+SIEMPRE debes dar recomendaciones basándote en el ámbito Cristiano y Worship preferiblemente.
+
+Aquí está la lista de canciones que el usuario tiene actualmente en su base de datos local:
+${songList || "La base de datos está vacía."}
+
+Cuando el usuario te pida sugerencias (por ejemplo: "¿Qué canción quedaría bien con X?" o "¿Qué canción habla sobre Y?"), revisa primero esta lista de su base de datos para sugerirle opciones que ya tiene, y siéntete libre de sugerir también otras canciones cristianas famosas que no estén en la lista si son muy adecuadas.`;
+
         const axios = require('axios');
         const groqResponse = await axios.post(
             'https://api.groq.com/openai/v1/chat/completions',
             {
                 model: 'llama-3.3-70b-versatile',
                 messages: [
-                    { role: 'system', content: 'Eres GI Setlist Assistant, un experto musical. Ayudas de forma amable y concisa a mejorar arreglos, buscar información de BPMs o tonos de canciones, o iterar acordes.' },
+                    { role: 'system', content: systemPrompt },
                     ...messages
                 ],
                 temperature: 0.7,

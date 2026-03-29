@@ -340,7 +340,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
             ) : (
                 <>
                   <span>✨</span>
-                  <span>Generar Letra y Acordes con IA (Estilo Chordify)</span>
+                  <span>Generar Letra y Acordes con IA</span>
                 </>
             )}
           </button>
