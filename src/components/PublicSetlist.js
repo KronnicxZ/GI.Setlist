@@ -46,35 +46,37 @@ const PublicSetlist = ({ apiUrl }) => {
   );
 
   return (
-    <div className="min-h-screen bg-main text-white pb-20">
-      <header className="px-8 py-10 border-b border-white/5 bg-surface/50 backdrop-blur-md sticky top-0 z-40">
+    <div className="h-screen flex flex-col bg-main text-white overflow-hidden">
+      <header className="shrink-0 px-6 md:px-8 py-6 md:py-10 border-b border-white/5 bg-surface/50 backdrop-blur-md z-40">
         <div className="max-w-5xl mx-auto">
           <div className="text-[10px] font-bold text-primary uppercase tracking-[.3em] mb-2">Vista de Músico En Vivo</div>
-          <h1 className="text-4xl font-black tracking-tight">{setlist.name}</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight">{setlist.name}</h1>
           {setlist.date && (
-            <p className="text-gray-500 font-bold mt-2">
+            <p className="text-gray-450 text-xs font-bold mt-2">
               {new Date(setlist.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}
             </p>
           )}
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        <div className="mb-10 p-5 bg-primary/10 border border-primary/20 rounded-2xl flex items-center space-x-4">
-          <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
-            <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg>
+      <main className="flex-1 overflow-y-auto px-6 py-8 md:py-10 custom-scrollbar">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-10 p-5 bg-primary/10 border border-primary/20 rounded-2xl flex items-center space-x-4">
+            <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary shrink-0">
+              <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg>
+            </div>
+            <p className="text-[10px] md:text-xs font-bold text-primary/80 uppercase tracking-widest leading-relaxed">
+              Estás viendo el setlist compartido. Haz clic en cualquier canción para ver la letra y cifrado.
+            </p>
           </div>
-          <p className="text-xs font-bold text-primary/80 uppercase tracking-widest leading-relaxed">
-            Estás viendo el setlist compartido. Haz clic en cualquier canción para ver la letra y cifrado.
-          </p>
-        </div>
 
-        <SongList 
-          songs={setlist.songs} 
-          onSongSelect={setSelectedSong}
-          isAdmin={false}
-          loading={false}
-        />
+          <SongList 
+            songs={setlist.songs} 
+            onSongSelect={setSelectedSong}
+            isAdmin={false}
+            loading={false}
+          />
+        </div>
       </main>
 
       {selectedSong && (
@@ -84,7 +86,7 @@ const PublicSetlist = ({ apiUrl }) => {
         />
       )}
 
-      <footer className="fixed bottom-0 left-0 right-0 py-4 bg-black/80 backdrop-blur-md border-t border-white/5 text-center px-6">
+      <footer className="shrink-0 py-4 bg-black/80 backdrop-blur-md border-t border-white/5 text-center px-6">
         <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">
           Desarrollado por <span className="text-primary opacity-80">GI SETLIST TEAM</span> • Generación Indetenible
         </p>
