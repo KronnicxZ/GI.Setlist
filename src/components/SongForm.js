@@ -196,9 +196,28 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
     onSubmit(formData);
   };
 
+  const handleCancelClick = () => {
+    // Verificar si hay cambios
+    const hasChanged = 
+      formData.title !== (initialData.title || '') ||
+      formData.artist !== (initialData.artist || '') ||
+      formData.lyrics !== (initialData.lyrics || '') ||
+      formData.bpm !== (initialData.bpm || '') ||
+      formData.originalKey !== (initialData.originalKey || '') ||
+      formData.vocalistKey !== (initialData.vocalistKey || '');
+
+    if (hasChanged) {
+      if (window.confirm('Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?')) {
+        onCancel();
+      }
+    } else {
+      onCancel();
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 md:backdrop-blur-md z-[250] flex items-center justify-center p-0 md:p-4 animate-fade-in">
-      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-3xl h-full md:h-auto md:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative">
+      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-3xl h-full md:h-auto md:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative" onClick={e => e.stopPropagation()}>
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
 
         <div className="relative py-5 px-8 border-b border-white/5 flex justify-between items-center">
@@ -209,7 +228,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
             <p className="text-sm text-gray-500 font-medium">Completa la información de la pista</p>
           </div>
           <button
-            onClick={onCancel}
+            onClick={handleCancelClick}
             className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24">
@@ -494,7 +513,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
         <div className="py-5 px-8 border-t border-white/5 flex items-center justify-end space-x-4 bg-white/[0.01]">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancelClick}
             className="px-6 py-3 text-sm font-bold text-gray-400 hover:text-white transition-colors"
           >
             Cancelar

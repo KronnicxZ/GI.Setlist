@@ -7,6 +7,7 @@ import guitarDb from '@tombatossals/chords-db/lib/guitar.json';
 import { transposeText, formatLyricsForDisplay, NOTES } from '../utils/chordTransposer';
 import { useAuth } from '../context/AuthContext';
 import { extractYoutubeVideoId } from '../utils/youtube';
+import html2canvas from 'html2canvas';
 
 const PlayerModal = ({ song, onClose }) => {
   const { isAdmin } = useAuth();
@@ -19,6 +20,8 @@ const PlayerModal = ({ song, onClose }) => {
   const [timeSignature, setTimeSignature] = useState('4/4');
   const [currentBeat, setCurrentBeat] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
+  const [showChords, setShowChords] = useState(true);
+  const [showFullLyrics, setShowFullLyrics] = useState(false);
 
   const synth = useRef(null);
   const repeatId = useRef(null);
@@ -178,6 +181,8 @@ const PlayerModal = ({ song, onClose }) => {
     const options = {
       replace: (domNode) => {
         if (domNode.attribs && domNode.attribs.class === 'chord') {
+          if (!showChords) return <></>; // Ocultar acordes si showChords es false
+
           const chordName = domNode.children[0]?.data;
           const chordData = getChordData(chordName);
 
@@ -217,7 +222,28 @@ const PlayerModal = ({ song, onClose }) => {
       }
     };
 
-    return <div className="lyrics-view">{parse(transposedLyrics, options)}</div>;
+    return <div className="lyrics-view" id="lyrics-to-export">{parse(transposedLyrics, options)}</div>;
+  };
+
+  const downloadImage = async () => {
+    const element = document.getElementById('lyrics-to-export-container');
+    if (!element) return;
+    
+    // Preparar para captura (quitar scroll, añadir fondo sólido si es necesario)
+    const canvas = await html2canvas(element, {
+      backgroundColor: '#0a0a0a',
+      scale: 2, // Mejor calidad
+      useCORS: true,
+      logging: false,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight
+    });
+    
+    const dataUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = `GI-Setlist-${song.title.replace(/\s+/g, '-')}.png`;
+    link.href = dataUrl;
+    link.click();
   };
 
   if (!song) return null;
@@ -331,26 +357,46 @@ const PlayerModal = ({ song, onClose }) => {
             </div>
 
             {/* 2. Transpose */}
-            <div className="space-y-2 md:space-y-3 pt-4 border-t border-white/5">
+            <div className="space-y-2 md:space-y-4 pt-4 border-t border-white/5">
               <p className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-widest text-center">Transponer Vista</p>
-              <div className="flex items-center justify-center space-x-3">
-                <button
-                  onClick={() => handleTranspose(semitones - 1)}
-                  className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all active:scale-90"
-                >
-                  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
-                </button>
+              
+              <div className="flex flex-col space-y-3">
+                <div className="flex items-center justify-center space-x-3">
+                  <button
+                    onClick={() => handleTranspose(semitones - 1)}
+                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all active:scale-90"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
+                  </button>
+                  <div className="relative group flex-1 max-w-[120px]">
+                    <select
+                      value={semitones}
+                      onChange={(e) => handleTranspose(parseInt(e.target.value))}
+                      className="w-full bg-white/5 border border-white/10 text-[11px] font-black rounded-xl px-2 py-2.5 text-white focus:outline-none focus:border-primary/50 cursor-pointer appearance-none text-center hover:bg-white/10 transition-all font-inter"
+                    >
+                      {[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].map(s => {
+                        const idx = (originalKeyIndex + s + 12) % 12;
+                        const keyName = NOTES[idx] + (isMinor ? 'm' : '');
+                        return (
+                          <option key={s} value={s} className="bg-[#1a1a1a]">
+                            {keyName} ({s > 0 ? `+${s}` : s})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <button
+                    onClick={() => handleTranspose(semitones + 1)}
+                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all active:scale-90"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
+                  </button>
+                </div>
                 <button
                   onClick={() => handleTranspose(0)}
-                  className="px-4 md:px-6 py-2 md:py-2.5 rounded-full bg-primary/10 text-primary text-[8px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-primary/20 transition-all border border-primary/20"
+                  className="w-full py-2 rounded-xl bg-white/5 text-gray-500 text-[9px] font-bold uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all"
                 >
-                  Reset
-                </button>
-                <button
-                  onClick={() => handleTranspose(semitones + 1)}
-                  className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all active:scale-90"
-                >
-                  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
+                  Restaurar Original
                 </button>
               </div>
             </div>
@@ -468,8 +514,38 @@ const PlayerModal = ({ song, onClose }) => {
             </div>
           </div>
           <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between md:sticky top-0 bg-surface/80 md:backdrop-blur-md z-10 no-print">
-            <h4 className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] md:tracking-[0.3em]">Letra y Acordes</h4>
-            <div className="flex items-center space-x-3 md:space-x-4">
+            <div className="flex items-center space-x-3">
+              <h4 className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] md:tracking-[0.3em]">Letra</h4>
+              <button 
+                onClick={() => setShowChords(!showChords)}
+                className={`px-3 py-1 rounded-full text-[9px] font-bold border transition-all ${showChords ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-white/5 border-white/10 text-gray-400'}`}
+              >
+                {showChords ? 'Con Acordes' : 'Solo Letra'}
+              </button>
+            </div>
+            <div className="flex items-center space-x-2 md:space-x-3">
+              <button
+                onClick={() => {
+                  const temp = document.createElement('textarea');
+                  temp.value = transposedLyrics.replace(/<[^>]*>/g, '').replace(/\[[^\]]*\]/g, '');
+                  document.body.appendChild(temp);
+                  temp.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(temp);
+                  alert('Letra copiada al portapapeles (sin acordes)');
+                }}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all text-gray-400 hover:text-white"
+                title="Copiar letra limpia"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" /></svg>
+              </button>
+              <button
+                onClick={downloadImage}
+                className="px-3 md:px-4 py-1.5 md:py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-full border border-primary/20 transition-all text-[8px] md:text-[10px] font-bold uppercase tracking-widest flex items-center space-x-2"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" /></svg>
+                <span className="hidden sm:inline">Capturar</span>
+              </button>
               <button
                 onClick={() => window.print()}
                 className="px-3 md:px-4 py-1.5 md:py-2 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all text-[8px] md:text-[10px] font-bold uppercase tracking-widest"
@@ -478,7 +554,12 @@ const PlayerModal = ({ song, onClose }) => {
               </button>
             </div>
           </div>
-          <div className="flex-1 p-6 md:p-12 overflow-y-visible md:overflow-y-auto overflow-x-hidden custom-scrollbar">
+          <div className="flex-1 p-6 md:p-12 overflow-y-visible md:overflow-y-auto overflow-x-hidden custom-scrollbar" id="lyrics-to-export-container">
+            {/* Header visible solo para captura/impresión si es necesario */}
+            <div className="hidden print:block mb-8">
+               <h1 className="text-3xl font-black text-white">{song.title}</h1>
+               <p className="text-primary font-bold">{song.artist} | Tono: {newKey} | BPM: {song.bpm}</p>
+            </div>
             <div className="rich-text-content text-gray-300 break-words max-w-full">
               {renderLyrics()}
             </div>

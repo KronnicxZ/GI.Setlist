@@ -6,6 +6,7 @@ import Transposer from './Transposer';
 import CircleOfFifths from './CircleOfFifths';
 import Progressions from './Progressions';
 import ChatAI from './ChatAI';
+import TonePiano from './TonePiano';
 
 const toolsList = [
   { id: 'chatai', name: 'Asistente IA', desc: 'Pregunta sobre acordes, progresiones y teoría musical', icon: 'M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7H14A7,7 0 0,1 21,14H22A1,1 0 0,1 23,15V18A1,1 0 0,1 22,19H21V20A2,2 0 0,1 19,22H5A2,2 0 0,1 3,20V19H2A1,1 0 0,1 1,18V15A1,1 0 0,1 2,14H3A7,7 0 0,1 10,7H11V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M7.5,13A2.5,2.5 0 0,0 5,15.5A2.5,2.5 0 0,0 7.5,18A2.5,2.5 0 0,0 10,15.5A2.5,2.5 0 0,0 7.5,13M16.5,13A2.5,2.5 0 0,0 14,15.5A2.5,2.5 0 0,0 16.5,18A2.5,2.5 0 0,0 19,15.5A2.5,2.5 0 0,0 16.5,13Z', color: 'from-pink-500 to-purple-600', bg: 'bg-gradient-to-br from-pink-500/15 to-purple-600/15', border: 'border-pink-500/20', iconColor: 'text-pink-400' },
@@ -14,7 +15,8 @@ const toolsList = [
   { id: 'taptempo', name: 'Tap Tempo', desc: 'Toca al ritmo para descubrir el BPM de cualquier canción', icon: 'M13,2.05V4.05C17.39,4.59 20.5,8.58 19.96,12.97C19.5,16.61 16.64,19.5 13,19.93V21.93C18.5,21.38 22.5,16.5 21.95,11C21.5,6.25 17.73,2.5 13,2.03V2.05M5.67,19.74C7.18,21 9.04,21.79 11,22V20C9.58,19.82 8.23,19.25 7.1,18.37L5.67,19.74M7.1,5.74C8.22,4.84 9.57,4.26 11,4.06V2.06C9.05,2.25 7.19,3 5.67,4.26L7.1,5.74M5.69,7.1L4.26,5.67C3,7.19 2.25,9.04 2.05,11H4.05C4.24,9.58 4.8,8.23 5.69,7.1M4.06,13H2.06C2.26,14.96 3.03,16.81 4.27,18.33L5.69,16.9C4.81,15.77 4.24,14.42 4.06,13M10,16.5L16,12L10,7.5V16.5Z', color: 'from-green-500 to-emerald-600', bg: 'bg-gradient-to-br from-green-500/15 to-emerald-600/15', border: 'border-green-500/20', iconColor: 'text-green-400' },
   { id: 'transposer', name: 'Transponer', desc: 'Cambia la tonalidad de cualquier canción con un clic', icon: 'M15,6H3V8H15V6M15,10H3V12H15V10M3,16H11V14H3V16M17,6V14.18C16.69,14.07 16.35,14 16,14A3,3 0 0,0 13,17A3,3 0 0,0 16,20A3,3 0 0,0 19,17V8H22V6H17Z', color: 'from-purple-500 to-violet-600', bg: 'bg-gradient-to-br from-purple-500/15 to-violet-600/15', border: 'border-purple-500/20', iconColor: 'text-purple-400' },
   { id: 'circle', name: 'Círculo de Quintas', desc: 'Visualiza relaciones armónicas entre todas las tonalidades', icon: 'M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z', color: 'from-orange-500 to-red-600', bg: 'bg-gradient-to-br from-orange-500/15 to-red-600/15', border: 'border-orange-500/20', iconColor: 'text-orange-400' },
-  { id: 'progressions', name: 'Progresiones', desc: 'Explora las progresiones más usadas en música de adoración', icon: 'M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z', color: 'from-cyan-500 to-teal-600', bg: 'bg-gradient-to-br from-cyan-500/15 to-teal-600/15', border: 'border-cyan-500/20', iconColor: 'text-cyan-400' }
+  { id: 'progressions', name: 'Progresiones', desc: 'Explora las progresiones más usadas en música de adoración', icon: 'M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z', color: 'from-cyan-500 to-teal-600', bg: 'bg-gradient-to-br from-cyan-500/15 to-teal-600/15', border: 'border-cyan-500/20', iconColor: 'text-cyan-400' },
+  { id: 'piano', name: 'Dar el Tono', desc: 'Referencia auditiva rápida para vocalistas y directores', icon: 'M12,14A1,1 0 0,0 13,13A1,1 0 0,0 12,12A1,1 0 0,0 11,13A1,1 0 0,0 12,14M12,1A7,7 0 0,0 5,8V13A1,1 0 0,0 4,14V17A1,1 0 0,0 5,18V19A3,3 0 0,0 8,22H16A3,3 0 0,0 19,19V18A1,1 0 0,0 20,17V14A1,1 0 0,0 19,13V8A7,7 0 0,0 12,1', color: 'from-indigo-500 to-blue-600', bg: 'bg-gradient-to-br from-indigo-500/15 to-blue-600/15', border: 'border-indigo-500/20', iconColor: 'text-indigo-400' }
 ];
 
 const ToolsScreen = () => {
@@ -29,6 +31,7 @@ const ToolsScreen = () => {
       case 'transposer': return <Transposer />;
       case 'circle': return <CircleOfFifths />;
       case 'progressions': return <Progressions />;
+      case 'piano': return <TonePiano />;
       default: return null;
     }
   };

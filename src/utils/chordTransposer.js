@@ -70,13 +70,20 @@ const autoBracketChords = (text) => {
         return fullTextMatch;
       }
 
+      // Evitar encerrar nombres de secciones si no tienen corchetes (ej: no convertir Coro en [Coro] si está en una oración)
+      const isSectionWord = /^(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Estribillo|Final)$/i.test(chordMatch);
+      if (isSectionWord && words.length > 1) {
+        return fullTextMatch;
+      }
+
       return `${prefix}[${chordMatch}]`;
     });
   }).join('\n');
 };
 
-// Expresión regular para detectar secciones (Verso, Coro, etc.)
-const SECTION_REGEX = /\b(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Pre-Coro|Estribillo|Bridge|Chorus|Verse|Tag|Ending)\b[:]?/gi;
+// Expresión regular para detectar secciones (Verso, Coro, etc.) 
+// Ahora es más estricta: requiere estar entre corchetes o seguida de dos puntos
+const SECTION_REGEX = /(?:\[(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Pre-Coro|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final)\])|(?:\b(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Pre-Coro|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final)\b:)/gi;
 
 // Función para transponer texto con acordes (ahora soporta HTML)
 const transposeText = (text, semitones) => {
@@ -101,13 +108,23 @@ const formatLyricsForDisplay = (text) => {
   // Soporta prefijos como "Pre-" (ej. Pre-Coro) y sufijos numéricos (ej. Verso II)
   const sectionWords = '(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final)';
 
-  // Regex corregido: captura opcionalmente "Pre-" o "Pre " antes de la palabra clave
-  const combinedSectionRegex = new RegExp(`(?:\\[(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\])|(?:\\b(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\b:?)`, 'gi');
+  // Regex mejorado: 
+  // 1. Detecta secciones entre corchetes: [Solo], [Coro]
+  // 2. Detecta secciones seguidas de dos puntos: Intro:, Coro: 
+  // 3. Detecta secciones que están SOLAS en una línea (sin más palabras después)
+  const combinedSectionRegex = new RegExp(
+    `(\\[(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\])|` + // [Intro]
+    `(\\b(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\b:)|` + // Intro:
+    `((?:^|\\r|\\n)\\s*(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\s*(?=\\r|\\n|$))`, // Isolated line
+    'gi'
+  );
 
-  formatted = formatted.replace(combinedSectionRegex, (match) => {
-    // Limpiar corchetes y dos puntos para el texto final
-    const cleanSection = match.replace(/[\[\]:]/g, '');
-    return `<span class="section-label">${cleanSection}</span>`;
+  formatted = formatted.replace(combinedSectionRegex, (match, inBrackets, withColon, isAlone) => {
+    // Si no es ninguna de las formas de sección confirmadas, no reemplazamos
+    if (!inBrackets && !withColon && !isAlone) return match;
+    
+    const cleanSection = match.trim().replace(/[\[\]:]/g, '');
+    return `${isAlone && match.startsWith('\n') ? '\n' : ''}<span class="section-label">${cleanSection}</span>`;
   });
 
   // 2. Procesar acordes pegados a palabras (Estilo Inline: [G]Cuan) -> renderizados arriba
@@ -133,6 +150,7 @@ const formatLyricsForQuill = (text) => {
 
   // 2. Colorear secciones: [INTRO], [CORO], etc.
   const sectionWords = '(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final|Prec-Coro|Pre coro|Pre-coro|Precoro)';
+  // En el editor Quill, las secciones DEBEN estar entre corchetes para ser coloreadas
   const sectionRegex = new RegExp(`\\[((?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?)\\]`, 'gi');
 
   processed = processed.replace(sectionRegex, (match, content) => {

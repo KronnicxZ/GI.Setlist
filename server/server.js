@@ -271,6 +271,17 @@ app.delete('/api/setlists/:id', async (req, res) => {
     }
 });
 
+// Ruta pública para compartir setlists (Sin Auth)
+app.get('/api/public/setlists/:id', async (req, res) => {
+    try {
+        const setlist = await Setlist.findById(req.params.id).populate('songs');
+        if (!setlist) return res.status(404).json({ error: 'Setlist no encontrado' });
+        res.json(setlist);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al obtener setlist público' });
+    }
+});
+
 // API Routes for Backup & Restore
 app.get('/api/backup', async (req, res) => {
     try {

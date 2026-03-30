@@ -85,7 +85,7 @@ const Tuner = () => {
 
   const startTuner = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, echoCancellation: false });
       streamRef.current = stream;
       
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -94,8 +94,15 @@ const Tuner = () => {
       analyserRef.current = audioContextRef.current.createAnalyser();
       analyserRef.current.fftSize = 2048;
       
+      // Filto de ruido para mejorar precisión (Low pass)
+      const biquadFilter = audioContextRef.current.createBiquadFilter();
+      biquadFilter.type = "lowpass";
+      biquadFilter.frequency.setValueAtTime(1000, audioContextRef.current.currentTime);
+      biquadFilter.Q.setValueAtTime(1, audioContextRef.current.currentTime);
+
       mediaStreamSourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
-      mediaStreamSourceRef.current.connect(analyserRef.current);
+      mediaStreamSourceRef.current.connect(biquadFilter);
+      biquadFilter.connect(analyserRef.current);
       
       setIsActive(true);
       setError(null);
