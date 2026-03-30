@@ -93,7 +93,33 @@ const Header = ({
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            {(activeTab === 'library' || activeTab === 'search') && (
+            {selectedSetlist && (
+              <div className="flex items-center space-x-1 mr-1">
+                <button 
+                  onClick={() => {
+                    const shareUrl = `${window.location.origin}/shared/${selectedSetlist.id || selectedSetlist._id}`;
+                    navigator.clipboard.writeText(shareUrl);
+                    alert('Enlace de Setlist copiado al portapapeles');
+                  }}
+                  className="p-2 text-gray-400 bg-white/5 border border-white/10 rounded-lg active:bg-white/10 active:scale-95 transition-transform"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M18,16.08C17.24,16.08 16.56,16.38 16.04,16.85L8.91,12.7C8.96,12.47 9,12.24 9,12C9,11.76 8.96,11.53 8.91,11.3L15.96,7.19C16.5,7.69 17.21,8 18,8A3,3 0 0,0 21,5A3,3 0 0,0 18,2A3,3 0 0,0 15,5C15,5.24 15.04,5.47 15.09,5.7L8.04,9.81C7.5,9.31 6.79,9 6,9A3,3 0 0,0 3,12A3,3 0 0,0 6,15C6.79,15 7.5,14.69 8.04,14.19L15.16,18.35C15.11,18.53 15.08,18.73 15.08,18.92A3,3 0 0,0 18.08,21.92A3,3 0 0,0 21.08,18.92A3,3 0 0,0 18.08,15.92C17.31,15.92 16.63,16.23 16.08,16.7L18.08,16.08Z" /></svg>
+                </button>
+                <button 
+                  onClick={() => window.print()}
+                  className="p-2 text-primary bg-primary/10 border border-primary/20 rounded-lg active:bg-primary/20 active:scale-95 transition-transform"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" /></svg>
+                </button>
+                <button 
+                  onClick={() => setSelectedSetlist(null)} 
+                  className="p-2 text-gray-400 hover:text-white rounded-lg active:scale-95 transition-transform"
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+                </button>
+              </div>
+            )}
+            {(activeTab === 'library' || activeTab === 'search') && !selectedSetlist && (
               <SortFilter onSortChange={setSortBy} compact={true} />
             )}
             {activeTab === 'search' && (

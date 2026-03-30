@@ -247,38 +247,38 @@ function App() {
           setSelectedSong={setSelectedSong} setSelectedSetlist={setSelectedSetlist}
           isAdmin={isAdmin} selectedSong={selectedSong} showSongForm={showSongForm}
         />
-
-        <ModalsContainer 
-          selectedSong={selectedSong} setSelectedSong={setSelectedSong}
-          showSongForm={showSongForm} setShowSongForm={setShowSongForm}
-          editingSong={editingSong} setEditingSong={setEditingSong}
-          handleSaveSong={onSaveSong} songs={songs}
-          showSetlistForm={showSetlistForm} setShowSetlistForm={setShowSetlistForm}
-          editingSetlist={editingSetlist} setEditingSetlist={setEditingSetlist}
-          handleSaveSetlist={onSaveSetlistHandler}
-          showLoginModal={showLoginModal} setShowLoginModal={setShowLoginModal}
-          isDeleteSetlistModalOpen={isDeleteSetlistModalOpen} setIsDeleteSetlistModalOpen={setIsDeleteSetlistModalOpen}
-          setSetlistToDelete={setSetlistToDelete} handleConfirmDeleteSetlist={onConfirmDeleteSetlist}
-          isDeleteSongModalOpen={isDeleteSongModalOpen} setIsDeleteSongModalOpen={setIsDeleteSongModalOpen}
-          songToDeleteInfo={songToDeleteInfo} setSongToDeleteInfo={setSongToDeleteInfo}
-          handleConfirmDeleteSong={onConfirmDeleteSong}
-          songToDuplicate={songToDuplicate} setSongToDuplicate={setSongToDuplicate}
-          handleConfirmDuplicate={onConfirmDuplicate}
-          showAdminPanel={showAdminPanel} setShowAdminPanel={setShowAdminPanel}
-          handleBackup={handleBackup} handleRestore={handleRestore} logout={logout} isAdmin={isAdmin}
-          restoreAlert={restoreAlert} setRestoreAlert={setRestoreAlert} confirmRestore={confirmRestore}
-          successAlert={successAlert} setSuccessAlert={setSuccessAlert}
-          errorAlert={errorAlert} setErrorAlert={setErrorAlert}
-          isAIChatOpen={isAIChatOpen} setIsAIChatOpen={setIsAIChatOpen}
-        />
-
-        {selectedSetlist && (
-          <PrintSetview 
-            setlist={selectedSetlist} 
-            songs={contextSongs} 
-          />
-        )}
       </div>
+
+      <ModalsContainer 
+        selectedSong={selectedSong} setSelectedSong={setSelectedSong}
+        showSongForm={showSongForm} setShowSongForm={setShowSongForm}
+        editingSong={editingSong} setEditingSong={setEditingSong}
+        handleSaveSong={onSaveSong} songs={songs}
+        showSetlistForm={showSetlistForm} setShowSetlistForm={setShowSetlistForm}
+        editingSetlist={editingSetlist} setEditingSetlist={setEditingSetlist}
+        handleSaveSetlist={onSaveSetlistHandler}
+        showLoginModal={showLoginModal} setShowLoginModal={setShowLoginModal}
+        isDeleteSetlistModalOpen={isDeleteSetlistModalOpen} setIsDeleteSetlistModalOpen={setIsDeleteSetlistModalOpen}
+        setSetlistToDelete={setSetlistToDelete} handleConfirmDeleteSetlist={onConfirmDeleteSetlist}
+        isDeleteSongModalOpen={isDeleteSongModalOpen} setIsDeleteSongModalOpen={setIsDeleteSongModalOpen}
+        songToDeleteInfo={songToDeleteInfo} setSongToDeleteInfo={setSongToDeleteInfo}
+        handleConfirmDeleteSong={onConfirmDeleteSong}
+        songToDuplicate={songToDuplicate} setSongToDuplicate={setSongToDuplicate}
+        handleConfirmDuplicate={onConfirmDuplicate}
+        showAdminPanel={showAdminPanel} setShowAdminPanel={setShowAdminPanel}
+        handleBackup={handleBackup} handleRestore={handleRestore} logout={logout} isAdmin={isAdmin}
+        restoreAlert={restoreAlert} setRestoreAlert={setRestoreAlert} confirmRestore={confirmRestore}
+        successAlert={successAlert} setSuccessAlert={setSuccessAlert}
+        errorAlert={errorAlert} setErrorAlert={setErrorAlert}
+        isAIChatOpen={isAIChatOpen} setIsAIChatOpen={setIsAIChatOpen}
+      />
+
+      {selectedSetlist && (
+        <PrintSetview 
+          setlist={selectedSetlist} 
+          songs={contextSongs} 
+        />
+      )}
     </div>
   );
 }
