@@ -5,8 +5,11 @@ export const useSongFilters = (songs, selectedSetlist, searchTerm, genreFilter, 
   const contextSongs = useMemo(() => {
     if (!selectedSetlist) return songs;
     return selectedSetlist.songs.map(s => {
-      const sId = s.id || s._id || s;
-      return songs.find(song => (song.id || song._id) === sId);
+      const sId = (s.id || s._id || s)?.toString();
+      return songs.find(song => {
+        const songId = (song.id || song._id)?.toString();
+        return songId === sId;
+      });
     }).filter(Boolean);
   }, [songs, selectedSetlist]);
 

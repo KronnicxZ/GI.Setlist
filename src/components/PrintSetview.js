@@ -6,7 +6,7 @@ const PrintSetview = ({ setlist, songs }) => {
   if (!setlist || !songs || songs.length === 0) return null;
 
   return (
-    <div className="hidden print:block bg-white text-black p-8 font-serif">
+    <div className="hidden print:block print-container bg-white text-black p-8 font-serif">
       <div className="border-b-4 border-black pb-6 mb-10">
         <h1 className="text-5xl font-black uppercase tracking-tighter mb-2">{setlist.name}</h1>
         {setlist.date && (

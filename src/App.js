@@ -275,7 +275,7 @@ function App() {
         {selectedSetlist && (
           <PrintSetview 
             setlist={selectedSetlist} 
-            songs={filteredSongs} 
+            songs={contextSongs} 
           />
         )}
       </div>

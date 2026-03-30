@@ -267,15 +267,10 @@ input[type="number"] {
   }
 
   /* Ocultar el resto de la aplicación para evitar la "primera página inútil" */
-  #root>div>*:not(.fixed),
-  #root>div>header,
-  #root>div>nav,
-  .no-print,
-  .sidebar-toggle,
-  button,
-  select,
-  iframe,
-  .metronome-container {
+  #root > div > *:not(.fixed):not(.print-container),
+  #root > div > header,
+  #root > div > nav,
+  .no-print {
     display: none !important;
     visibility: hidden !important;
     height: 0 !important;

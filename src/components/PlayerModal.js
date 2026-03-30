@@ -39,15 +39,17 @@ const PlayerModal = ({ song, onClose }) => {
     setBpm(Number(song?.bpm) || 120);
   }, [song]);
 
-  // Metronome Sound Setup (One-time)
+  // Metronome Sound Setup (Crisp Woodblock Click)
   useEffect(() => {
     synth.current = new Tone.MembraneSynth({
-      pitchDecay: 0.008,
-      octaves: 2,
+      pitchDecay: 0.001,
+      octaves: 1,
+      oscillator: { type: "sine" },
       envelope: {
-        attack: 0.0001,
-        decay: 0.2,
-        sustain: 0
+        attack: 0.001,
+        decay: 0.1,
+        sustain: 0,
+        release: 0.1
       }
     }).toDestination();
 
@@ -76,11 +78,11 @@ const PlayerModal = ({ song, onClose }) => {
       repeatId.current = Tone.getTransport().scheduleRepeat((time) => {
         const beat = beatCounter.current;
 
-        // 1. Sound Logic
+        // 1. Sound Logic (Claro y distinguible)
         if (beat === 0) {
-          synth.current.triggerAttackRelease("C4", "32n", time, 1.0);
+          synth.current.triggerAttackRelease("C6", "32n", time, 1.0);
         } else {
-          synth.current.triggerAttackRelease("G3", "32n", time, 0.4);
+          synth.current.triggerAttackRelease("C5", "32n", time, 0.5);
         }
 
         // 2. UI Sync
@@ -229,19 +231,36 @@ const PlayerModal = ({ song, onClose }) => {
     const element = document.getElementById('lyrics-to-export-container');
     if (!element) return;
     
-    // Preparar para captura (quitar scroll, añadir fondo sólido si es necesario)
+    // Alerta visual para el usuario
+    const originalStyle = element.style.cssText;
+    
     const canvas = await html2canvas(element, {
       backgroundColor: '#0a0a0a',
-      scale: 2, // Mejor calidad
+      scale: 2,
       useCORS: true,
-      logging: false,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight
+      allowTaint: true,
+      onclone: (clonedDoc) => {
+        // En el clon, quitamos el scroll para capturar todo el alto
+        const clonedElement = clonedDoc.getElementById('lyrics-to-export-container');
+        if (clonedElement) {
+          clonedElement.style.height = 'auto';
+          clonedElement.style.overflow = 'visible';
+          clonedElement.style.maxHeight = 'none';
+          clonedElement.style.padding = '50px';
+          
+          // Forzar que el fondo no sea transparente
+          clonedElement.style.backgroundColor = '#0a0a0a';
+          
+          // Asegurar que las secciones y acordes sean visibles
+          const chords = clonedElement.querySelectorAll('.chord');
+          chords.forEach(c => c.style.display = showChords ? 'inline-block' : 'none');
+        }
+      }
     });
     
     const dataUrl = canvas.toDataURL('image/png');
     const link = document.createElement('a');
-    link.download = `GI-Setlist-${song.title.replace(/\s+/g, '-')}.png`;
+    link.download = `Letra-${song.title.replace(/\s+/g, '-')}-${newKey}.png`;
     link.href = dataUrl;
     link.click();
   };
