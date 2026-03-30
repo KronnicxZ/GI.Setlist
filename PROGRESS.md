@@ -42,16 +42,27 @@ Este documento sirve como bitácora de los avances, optimizaciones y refactoriza
   - Se eliminó el texto innecesario ("Estilo Chordify") de los botones para una UI más limpia.
 
 ### 8. Lógica de Setlists y Sincronización
-- **Orden Personalizado Preservado:** Se eliminó el auto-ordenamiento alfabético en los setlists. Ahora las canciones se muestran exactamente en el orden en que el usuario las arrastró y guardó durante la creación del setlist.
-- **Sincronización de Fechas (Timezone Fix):** Se solucionó el desfase de fechas (donde un Domingo se mostraba como Sábado) forzando la visualización en formato `UTC` para todos los calendarios de setlists.
 - **Estado de Orden Inicial:** Se sincronizó el estado interno de la biblioteca para que inicie por defecto en "Recientes", coincidiendo con lo que indica la interfaz visual.
+
+### 9. Suite de Herramientas Pro y Colaboración (Live View)
+- **Compartir Setlists (Live View):** Implementación de rutas dinámicas mediante `react-router-dom` para generar enlaces públicos (`/shared/:id`). Permite que los músicos vean el setlist en tiempo real sin necesidad de login.
+- **Exportación Masiva (Songbook):** Nuevo motor de impresión que genera un libro de acordes profesional a partir de un setlist completo, optimizado para lectura y ahorro de papel.
+- **Referencia de Tonos:** Herramienta "Dar el Tono" con sintetizador de audio real (`tone.js`) para ayudar a vocalistas a encontrar su nota inicial.
+- **Modo "Solo Letra":** Toggle en el visor para ocultar acordes y botón de copiado rápido de letra limpia al portapapeles.
+- **Seguridad en Edición:** Confirmación de cambios no guardados en el editor para evitar pérdida accidental de datos.
+
+### 10. Refactorización Mayor y Optimización
+- **Arquitectura basada en Hooks:** Se extrajo el 70% de la lógica de `App.js` hacia hooks personalizados (`useData`, `useSongFilters`, `useBackup`), mejorando la mantenibilidad.
+- **Búsqueda Difusa (Fuzzy Search):** Integración de `fuse.js` para una búsqueda de canciones mucho más potente que tolera errores tipográficos.
+- **Filtros de Audio:** Mejora en la precisión del afinador mediante filtros de paso bajo para eliminar ruido.
 
 ---
 
 ## ⏳ Pendiente por Desarrollar (Próximos Pasos)
 
-- [ ] **Afinador Cromático:** Implementar la detección de pitch en tiempo real.
+- [x] **Afinador Cromático:** Pitch en tiempo real con filtrado de ruido. (Completado)
 - [ ] **Tablatura Interactiva:** Explorar visualizadores de tablaturas para canciones seleccionadas.
+- [ ] **Sincronización Live Maestro-Alumno:** Que el scroll del administrador mueva el de los músicos compartidos.
 
 ---
 
