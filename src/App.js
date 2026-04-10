@@ -138,7 +138,7 @@ function App() {
   };
 
   const onDeleteSetlistHandler = (id) => {
-    setlistToDelete(id);
+    setSetlistToDelete(id);
     setIsDeleteSetlistModalOpen(true);
   };
 
@@ -149,7 +149,7 @@ function App() {
       if (selectedSetlist?.id === setlistToDelete) setSelectedSetlist(null);
     } finally {
       setIsDeleteSetlistModalOpen(false);
-      setlistToDelete(null);
+      setSetlistToDelete(null);
     }
   };
 

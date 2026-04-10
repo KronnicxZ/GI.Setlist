@@ -10,6 +10,7 @@ Este documento sirve como bitácora de los avances, optimizaciones y refactoriza
 - **Entorno Local:** Repositorio clonado y configurado exitosamente mediante comandos duales (`concurrently`).
 - **Migración de Datos:** Se creó y ejecutó con éxito el script `import.js` con soporte DNS (Google `8.8.8.8`) para inyectar 64 temas del CSV original hacia **MongoDB Atlas**.
 - **Sesión de Administrador:** Integrado correctamente (password configurado en el backend y `.env`).
+- **Configuración de Entorno:** Archivo `.env` configurado con credenciales reales (Atlas, Groq, YouTube, Bible API), permitiendo la conexión a la base de datos de producción.
 
 ### 2. Integración de Inteligencia Artificial (AI Chordify Style)
 - **Motor Principal:** Integración con **Groq (Llama 3)** de latencia ultra baja para generar acordes cifrados entre corchetes sobre la letra y metadatos (Tono, BPM).
@@ -22,12 +23,17 @@ Este documento sirve como bitácora de los avances, optimizaciones y refactoriza
 ### 4. Pulido de Interfaces Premium y Experiencia de Usuario (UX)
 - **Empty States Avanzados:** Si la biblioteca de canciones no carga resultados de búsqueda o base de datos, ahora despliega una pantalla muy estética, profesional y "Glassmorfizada" con un icono neón y mensajes amigables, sustituyendo los estados rotos o aburridos.
 - **Barra de Navegación Lateral y Móvil:** Expansión del UI con un menú adicional para agrupar todas las utilidades extra requeridas por el usuario ("Herramientas").
+- **Reproductor Móvil Compacto (Audio Mode):** Se sustituyó la miniatura de video por un reproductor de audio horizontal ultra-compacto y profesional en dispositivos móviles. Utiliza la API de YouTube de forma invisible para permitir controles de Play/Pause y Seek (adelantar/atrasar) sin sacrificar espacio de pantalla para las letras.
 
 ### 5. Herramientas Musicales Embebidas (Fase Inicial)
 - **Módulo Creado:** `src/components/tools/Metronome.js`
 - **Funcionalidad Click (Metrónomo):** 
   - Se utilizó `tone.js` para proveer sonido de precisión milimétrica inmune a los *delays* que suele dar Javascript estándar por los bucles de renderizado.
   - Diseño impactante de "luces" que parpadean según los Beats Per Measure (BPM), controles deslizantes suaves y pantalla numérica gigante con gradientes metálicos.
+- [x] Header dinámico inteligente en móvil (Video -> Audio compacto)
+- [x] Sincronización de tiempo, tono (Key) y BPM en reproductor móvil
+- [x] Integración de buscador en pantalla principal (Biblioteca)
+- [x] Corrección de errores en eliminación de setlists
 
 ### 6. Asistente de IA de Contexto Avanzado (Global)
 - **Botón Flotante Global:** Se integró un botón circular ultra-discreto y elegante en el layout principal (`App.js`) que ofrece acceso instantáneo al asistente desde cualquier pantalla.

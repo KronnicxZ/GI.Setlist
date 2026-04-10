@@ -87,7 +87,7 @@ const Header = ({
               <h1 className="text-xl font-black tracking-tighter flex items-center">
                 <span className="text-white">GI</span>
                 <span className="text-primary ml-1.5 line-clamp-1">
-                  {activeTab === 'admin' ? 'Perfil' : activeTab === 'setlists' ? 'Setlists' : activeTab === 'tools' ? 'Herramientas' : activeTab === 'search' ? 'Buscador' : (selectedSetlist ? selectedSetlist.name : 'Setlist')}
+                  {activeTab === 'admin' ? 'Perfil' : activeTab === 'setlists' ? 'Setlists' : activeTab === 'tools' ? 'Herramientas' : (selectedSetlist ? selectedSetlist.name : 'Buscador')}
                 </span>
               </h1>
             </div>
@@ -122,16 +122,11 @@ const Header = ({
             {(activeTab === 'library' || activeTab === 'search') && !selectedSetlist && (
               <SortFilter onSortChange={setSortBy} compact={true} />
             )}
-            {activeTab === 'search' && (
-              <button onClick={() => { setActiveTab('library'); setSearchTerm(''); }} className="p-2 text-primary" title="Volver a la biblioteca">
-                <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
-              </button>
-            )}
           </div>
         </div>
 
         {/* Genre Tabs Filter - Mobile */}
-        {(activeTab === 'library' || activeTab === 'search') && (
+        {((activeTab === 'library' && !selectedSetlist) || activeTab === 'search') && (
           <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar pb-2">
             {['Todas', 'Alabanza', 'Adoración'].map(genre => {
               const normalize = (text) => text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -149,7 +144,7 @@ const Header = ({
           </div>
         )}
 
-        {activeTab === 'search' && (
+        {(activeTab === 'library' || activeTab === 'search') && !selectedSetlist && (
           <div className="pb-2 animate-fade-in"><SearchBar value={searchTerm} onSearch={setSearchTerm} /></div>
         )}
       </div>

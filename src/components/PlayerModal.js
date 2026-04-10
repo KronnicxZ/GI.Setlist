@@ -22,6 +22,12 @@ const PlayerModal = ({ song, onClose }) => {
   const [showVideo, setShowVideo] = useState(false);
   const [showChords, setShowChords] = useState(true);
   const [showFullLyrics, setShowFullLyrics] = useState(false);
+  const [player, setPlayer] = useState(null);
+  const [playerState, setPlayerState] = useState(-1);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const scrollContainerRef = useRef(null);
+  const timeIntervalRef = useRef(null);
 
   const synth = useRef(null);
   const repeatId = useRef(null);
@@ -113,6 +119,121 @@ const PlayerModal = ({ song, onClose }) => {
       await Tone.start();
     }
     setIsPlaying(!isPlaying);
+  };
+
+  const videoId = extractYoutubeVideoId(song?.youtubeUrl);
+
+  // YouTube Player API Logic
+  useEffect(() => {
+    if (!videoId) return;
+
+    // Load API
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+
+    let interval = setInterval(() => {
+      if (window.YT && window.YT.Player) {
+        clearInterval(interval);
+        new window.YT.Player('youtube-player-hidden', {
+          height: '0',
+          width: '0',
+          videoId: videoId,
+          playerVars: {
+            'autoplay': 0,
+            'controls': 1,
+            'rel': 0,
+            'modestbranding': 1,
+            'playsinline': 1
+          },
+          events: {
+            'onReady': (event) => setPlayer(event.target),
+            'onStateChange': (event) => setPlayerState(event.data)
+          }
+        });
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [videoId]);
+
+  const handlePlayPause = () => {
+    if (!player) return;
+    if (playerState === 1) {
+      player.pauseVideo();
+    } else {
+      player.playVideo();
+    }
+  };
+
+  const skipTime = (seconds) => {
+    if (!player) return;
+    const currentTime = player.getCurrentTime();
+    player.seekTo(currentTime + seconds, true);
+    setCurrentTime(currentTime + seconds);
+  };
+
+  // Track playback time with more robust sync
+  useEffect(() => {
+    const updateTime = () => {
+      if (player && typeof player.getCurrentTime === 'function') {
+        const time = player.getCurrentTime();
+        if (time !== currentTime) {
+          setCurrentTime(time);
+        }
+      }
+    };
+
+    if (playerState === 1) { // YT.PlayerState.PLAYING
+      // Initial update
+      updateTime();
+      // Regular interval
+      timeIntervalRef.current = setInterval(updateTime, 500);
+    } else {
+      // Sync one last time on pause/stop
+      updateTime();
+      if (timeIntervalRef.current) {
+        clearInterval(timeIntervalRef.current);
+      }
+    }
+
+    return () => {
+      if (timeIntervalRef.current) {
+        clearInterval(timeIntervalRef.current);
+      }
+    };
+  }, [playerState, player]);
+
+  const formatTime = (seconds) => {
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  // Get current key based on transposition
+  const musicalNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const getCurrentKey = () => {
+    if (!song?.key) return '-';
+    if (semitones === 0) return song.key;
+    
+    // Simple transposition logic for the key label
+    const baseKey = song.key.split(' ')[0].toUpperCase();
+    const isMinor = song.key.toLowerCase().includes('m');
+    const index = musicalNotes.indexOf(baseKey);
+    if (index === -1) return song.key;
+    
+    let newIndex = (index + semitones) % 12;
+    if (newIndex < 0) newIndex += 12;
+    return musicalNotes[newIndex] + (isMinor ? 'm' : '');
+  };
+
+  const handleScroll = (e) => {
+    if (window.innerWidth >= 768) return;
+    const scrollPos = e.target.scrollTop;
+    setIsScrolled(scrollPos > 120);
   };
 
   // Helper to find chord data in DB
@@ -230,10 +351,10 @@ const PlayerModal = ({ song, onClose }) => {
   const downloadImage = async () => {
     const element = document.getElementById('lyrics-to-export-container');
     if (!element) return;
-    
+
     // Alerta visual para el usuario
     const originalStyle = element.style.cssText;
-    
+
     const canvas = await html2canvas(element, {
       backgroundColor: '#0a0a0a',
       scale: 2,
@@ -247,17 +368,17 @@ const PlayerModal = ({ song, onClose }) => {
           clonedElement.style.overflow = 'visible';
           clonedElement.style.maxHeight = 'none';
           clonedElement.style.padding = '50px';
-          
+
           // Forzar que el fondo no sea transparente
           clonedElement.style.backgroundColor = '#0a0a0a';
-          
+
           // Asegurar que las secciones y acordes sean visibles
           const chords = clonedElement.querySelectorAll('.chord');
           chords.forEach(c => c.style.display = showChords ? 'inline-block' : 'none');
         }
       }
     });
-    
+
     const dataUrl = canvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.download = `Letra-${song.title.replace(/\s+/g, '-')}-${newKey}.png`;
@@ -266,8 +387,6 @@ const PlayerModal = ({ song, onClose }) => {
   };
 
   if (!song) return null;
-
-  const videoId = extractYoutubeVideoId(song.youtubeUrl);
 
   const handleTranspose = (steps) => {
     setSemitones(steps);
@@ -283,29 +402,103 @@ const PlayerModal = ({ song, onClose }) => {
 
   return (
     <div className={`fixed inset-0 bg-black md:bg-black/90 md:backdrop-blur-xl z-[150] overflow-hidden animate-fade-in flex items-start md:items-center justify-center p-0 md:p-4 no-print`}>
-      <div className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative overflow-y-auto overflow-x-hidden md:overflow-hidden flex flex-col md:flex-row h-full md:h-full md:max-h-[90vh] custom-scrollbar">
+      <div 
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative overflow-y-auto overflow-x-hidden md:overflow-hidden flex flex-col md:flex-row h-full md:h-full md:max-h-[90vh] custom-scrollbar"
+      >
 
         <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-        {/* Mobile Sticky Header */}
-        <div className="md:hidden sticky top-0 z-[60] bg-surface/95 backdrop-blur-xl px-4 py-3 border-b border-white/5">
-          <button
-            onClick={onClose}
-            className="flex items-center space-x-2 text-gray-500 hover:text-white transition-colors mb-2 group"
-          >
-            <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10">
-              <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
+        {/* Mobile Dynamic Master Player Container */}
+        <div className={`md:hidden sticky top-0 z-[60] transition-all duration-300 w-full ${isScrolled ? 'bg-surface/95 backdrop-blur-xl border-b border-white/10 py-1 shadow-2xl' : 'bg-[#0a0a0a]'}`}>
+          
+          {/* 1. Header Navigation (Always visible, small when scrolled) */}
+          <div className={`px-4 flex items-center justify-between ${isScrolled ? 'py-1' : 'py-3'}`}>
+            <button
+              onClick={onClose}
+              className={`rounded-full bg-white/5 flex items-center justify-center text-gray-400 active:bg-white/10 transition-all ${isScrolled ? 'w-8 h-8' : 'w-10 h-10'}`}
+            >
+              <svg className={isScrolled ? "w-5 h-5" : "w-6 h-6"} viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
+            </button>
+            <div className={`flex flex-col items-end text-right transition-all flex-1 ml-4 overflow-hidden ${isScrolled ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+              <div className="flex items-baseline space-x-2 justify-end mb-0.5">
+                <h3 className="text-[11px] font-black text-white truncate">{song.title}</h3>
+                <p className="text-primary text-[9px] font-bold truncate uppercase">{song.artist}</p>
+              </div>
+              {/* Subtle Metadata Row - Integrated below titles */}
+              <div className="flex items-center space-x-3 opacity-50">
+                <div className="flex items-center space-x-1">
+                  <span className="text-[8px] font-bold text-primary uppercase">K:</span>
+                  <span className="text-[9px] font-black text-white">{getCurrentKey()}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <span className="text-[8px] font-bold text-primary uppercase">B:</span>
+                  <span className="text-[9px] font-black text-white">{song.bpm || '-'}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                   <span className="text-[9px] font-mono font-medium text-white">{formatTime(currentTime)} / {player ? formatTime(player.getDuration()) : '-:-'}</span>
+                </div>
+              </div>
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Volver</span>
-          </button>
-          <div className="flex items-baseline justify-between gap-4">
-            <h3 className="text-base font-extrabold text-white truncate leading-tight">{song.title}</h3>
-            <p className="text-primary text-[10px] font-bold truncate shrink-0 uppercase tracking-wider">{song.artist}</p>
+            {!isScrolled && (
+              <div className="flex flex-col items-end text-right">
+                <h3 className="text-xs font-black text-white/40 uppercase tracking-widest">EN VIVO</h3>
+              </div>
+            )}
           </div>
+
+          {/* 2. THE MASTER PLAYER INSTANCE (Stays in DOM to keep sync) */}
+          <div className={`px-4 transition-all duration-500 overflow-hidden ${isScrolled ? 'h-0 opacity-0 pointer-events-none mb-0' : 'h-auto opacity-100 mb-4'}`}>
+            <h3 className="text-xl font-black text-white mb-0.5 leading-tight">{song.title}</h3>
+            <p className="text-primary text-xs font-bold uppercase tracking-wider mb-4 opacity-80">{song.artist}</p>
+            
+            {videoId && (
+              <div className="rounded-2xl overflow-hidden shadow-2xl bg-black border border-white/10 aspect-video relative">
+                <div id="youtube-player-hidden" className="w-full h-full"></div>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Compact Audio Controls */}
+          {isScrolled && videoId && (
+            <div className="px-3 pb-2 animate-fade-in flex flex-col items-center">
+              <div className="w-full bg-white/5 backdrop-blur-md rounded-2xl py-1 px-6 flex items-center justify-between border border-white/10 transition-all shadow-lg">
+                <button onClick={() => player?.seekTo(0)} className="text-primary/60 active:text-primary transition-colors p-2">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M6,18H8V6H6M9.5,12L18,18V6L9.5,12Z" /></svg>
+                </button>
+                <button onClick={() => skipTime(-10)} className="text-primary/60 active:text-primary transition-colors p-2">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M11.5,12L20,18V6M11,18V6L2.5,12L11,18Z" /></svg>
+                </button>
+                <button 
+                  onClick={handlePlayPause}
+                  className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 hover:bg-primary/20 active:scale-95 transition-all"
+                >
+                  {playerState === 1 ? (
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg>
+                  ) : (
+                    <svg className="w-5 h-5 ml-0.5" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
+                  )}
+                </button>
+                <button onClick={() => skipTime(10)} className="text-primary/60 active:text-primary transition-colors p-2">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M13,12L4.5,6V18M12.5,6V18L21,12L12.5,6Z" /></svg>
+                </button>
+                <button onClick={() => player?.seekTo(player.getDuration() - 1)} className="text-primary/60 active:text-primary transition-colors p-2">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M16,18H18V6H16M6,18L14.5,12L6,6V18Z" /></svg>
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* Ensure a fallback hidden container exists if scrolled and something goes wrong */}
+          <div id="youtube-player-hidden-safe" className="hidden"></div>
         </div>
 
         <div className="modal-sidebar w-full md:w-[380px] lg:w-[400px] flex flex-col border-b md:border-b-0 md:border-r border-white/5 relative bg-black/20 shrink-0 no-print">
-          {/* Desktop Static Header */}
+          {/* Mobile Initial Content is now part of the Sticky Header for sync purposes */}
+          <div className="md:hidden">
+            {/* Space for internal scrolling if needed */}
+          </div>
           <div className="hidden md:block p-6 md:p-8 pb-4">
             <button
               onClick={onClose}
@@ -321,39 +514,42 @@ const PlayerModal = ({ song, onClose }) => {
           </div>
 
           <div className="p-6 md:p-8 pt-6 md:pt-0 space-y-6 md:space-y-8 overflow-y-visible md:overflow-y-auto custom-scrollbar">
-            {videoId ? (
-              <div className="rounded-sub overflow-hidden shadow-2xl bg-black border border-white/5 aspect-video relative group cursor-pointer" onClick={() => setShowVideo(true)}>
-                {!showVideo ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm group-hover:bg-black/20 transition-all">
-                    <img
-                      src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-                      className="absolute inset-0 w-full h-full object-cover opacity-60"
-                      alt=""
-                      onError={(e) => { e.target.src = `https://img.youtube.com/vi/${videoId}/0.jpg`; }}
-                    />
-                    <div className="relative z-10 w-16 h-16 bg-primary text-black rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                      <svg className="w-8 h-8 ml-1" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
+            {/* Desktop Video Section */}
+            <div className="hidden md:block">
+              {videoId ? (
+                <div className="rounded-sub overflow-hidden shadow-2xl bg-black border border-white/5 aspect-video relative group cursor-pointer" onClick={() => setShowVideo(true)}>
+                  {!showVideo ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm group-hover:bg-black/20 transition-all">
+                      <img
+                        src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                        className="absolute inset-0 w-full h-full object-cover opacity-60"
+                        alt=""
+                        onError={(e) => { e.target.src = `https://img.youtube.com/vi/${videoId}/0.jpg`; }}
+                      />
+                      <div className="relative z-10 w-16 h-16 bg-primary text-black rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                        <svg className="w-8 h-8 ml-1" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
+                      </div>
+                      <span className="relative z-10 mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white bg-black/50 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">Cargar Video</span>
                     </div>
-                    <span className="relative z-10 mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white bg-black/50 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">Cargar Video</span>
-                  </div>
-                ) : (
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="absolute inset-0"
-                    title="YouTube Preview"
-                  ></iframe>
-                )}
-              </div>
-            ) : (
-              <div className="rounded-sub bg-white/5 border border-white/5 aspect-video flex items-center justify-center">
-                <p className="text-gray-500 text-xs font-medium">No hay video disponible</p>
-              </div>
-            )}
+                  ) : (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0"
+                      title="YouTube Preview"
+                    ></iframe>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-sub bg-white/5 border border-white/5 aspect-video flex items-center justify-center">
+                  <p className="text-gray-500 text-xs font-medium">No hay video disponible</p>
+                </div>
+              )}
+            </div>
 
             {/* 1. Tono Original, Tono Actual */}
             <div className="grid grid-cols-2 gap-2 md:gap-3">
@@ -378,7 +574,7 @@ const PlayerModal = ({ song, onClose }) => {
             {/* 2. Transpose */}
             <div className="space-y-2 md:space-y-4 pt-4 border-t border-white/5">
               <p className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-widest text-center">Transponer Vista</p>
-              
+
               <div className="flex flex-col space-y-3">
                 <div className="flex items-center justify-center space-x-3">
                   <button
@@ -535,7 +731,7 @@ const PlayerModal = ({ song, onClose }) => {
           <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between md:sticky top-0 bg-surface/80 md:backdrop-blur-md z-10 no-print">
             <div className="flex items-center space-x-3">
               <h4 className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] md:tracking-[0.3em]">Letra</h4>
-              <button 
+              <button
                 onClick={() => setShowChords(!showChords)}
                 className={`px-3 py-1 rounded-full text-[9px] font-bold border transition-all ${showChords ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-white/5 border-white/10 text-gray-400'}`}
               >
@@ -576,8 +772,8 @@ const PlayerModal = ({ song, onClose }) => {
           <div className="flex-1 p-6 md:p-12 overflow-y-visible md:overflow-y-auto overflow-x-hidden custom-scrollbar" id="lyrics-to-export-container">
             {/* Header visible solo para captura/impresión si es necesario */}
             <div className="hidden print:block mb-8">
-               <h1 className="text-3xl font-black text-white">{song.title}</h1>
-               <p className="text-primary font-bold">{song.artist} | Tono: {newKey} | BPM: {song.bpm}</p>
+              <h1 className="text-3xl font-black text-white">{song.title}</h1>
+              <p className="text-primary font-bold">{song.artist} | Tono: {newKey} | BPM: {song.bpm}</p>
             </div>
             <div className="rich-text-content text-gray-300 break-words max-w-full">
               {renderLyrics()}
