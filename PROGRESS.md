@@ -30,10 +30,10 @@ Este documento sirve como bitácora de los avances, optimizaciones y refactoriza
 - **Funcionalidad Click (Metrónomo):** 
   - Se utilizó `tone.js` para proveer sonido de precisión milimétrica inmune a los *delays* que suele dar Javascript estándar por los bucles de renderizado.
   - Diseño impactante de "luces" que parpadean según los Beats Per Measure (BPM), controles deslizantes suaves y pantalla numérica gigante con gradientes metálicos.
-- [x] Header dinámico inteligente en móvil (Video -> Audio compacto)
-- [x] Sincronización de tiempo, tono (Key) y BPM en reproductor móvil
-- [x] Integración de buscador en pantalla principal (Biblioteca)
-- [x] Corrección de errores en eliminación de setlists
+- [x] Header dinámico inteligente (Video -> Audio compacto con animaciones fluidas).
+- [x] Sincronización maestra de YouTube (Playback y metadatos unificados).
+- [x] Integración de buscador en pantalla principal (Acceso directo desde Inicio).
+- [x] Corrección de bugs críticos en gestión de Setlists y carga de video en móviles.
 
 ### 6. Asistente de IA de Contexto Avanzado (Global)
 - **Botón Flotante Global:** Se integró un botón circular ultra-discreto y elegante en el layout principal (`App.js`) que ofrece acceso instantáneo al asistente desde cualquier pantalla.

@@ -138,9 +138,10 @@ const PlayerModal = ({ song, onClose }) => {
     let interval = setInterval(() => {
       if (window.YT && window.YT.Player) {
         clearInterval(interval);
-        new window.YT.Player('youtube-player-hidden', {
-          height: '0',
-          width: '0',
+        // Ensure we always use the same element ID for the master player
+        new window.YT.Player('master-youtube-player', {
+          height: '100%',
+          width: '100%',
           videoId: videoId,
           playerVars: {
             'autoplay': 0,
@@ -161,11 +162,19 @@ const PlayerModal = ({ song, onClose }) => {
   }, [videoId]);
 
   const handlePlayPause = () => {
-    if (!player) return;
-    if (playerState === 1) {
+    if (!player || typeof player.getPlayerState !== 'function') return;
+    
+    const state = player.getPlayerState();
+    if (state === 1) { // Playing
       player.pauseVideo();
     } else {
-      player.playVideo();
+      // In mobile, sometimes we need to ensure the video is cued/loaded
+      // if it hasn't been touched yet.
+      if (state === -1 || state === 5) { // Unstarted or Cued
+        player.playVideo();
+      } else {
+        player.playVideo();
+      }
     }
   };
 
@@ -446,49 +455,55 @@ const PlayerModal = ({ song, onClose }) => {
                 <h3 className="text-xs font-black text-white/40 uppercase tracking-widest">EN VIVO</h3>
               </div>
             )}
-          </div>
+          </div>          {/* 2. THE MASTER PLAYER & TITLE SECTION */}
+          <div className="flex flex-col">
+            {/* Titles - Visible when not scrolled */}
+            <div className={`px-4 transition-all duration-500 overflow-hidden ${isScrolled ? 'max-h-0 opacity-0 mb-0' : 'max-h-20 opacity-100 mb-2'}`}>
+              <h3 className="text-xl font-black text-white mb-0.5 leading-tight">{song.title}</h3>
+              <p className="text-primary text-xs font-bold uppercase tracking-wider opacity-80">{song.artist}</p>
+            </div>
 
-          {/* 2. THE MASTER PLAYER INSTANCE (Stays in DOM to keep sync) */}
-          <div className={`px-4 transition-all duration-500 overflow-hidden ${isScrolled ? 'h-0 opacity-0 pointer-events-none mb-0' : 'h-auto opacity-100 mb-4'}`}>
-            <h3 className="text-xl font-black text-white mb-0.5 leading-tight">{song.title}</h3>
-            <p className="text-primary text-xs font-bold uppercase tracking-wider mb-4 opacity-80">{song.artist}</p>
-            
-            {videoId && (
-              <div className="rounded-2xl overflow-hidden shadow-2xl bg-black border border-white/10 aspect-video relative">
-                <div id="youtube-player-hidden" className="w-full h-full"></div>
-              </div>
-            )}
-          </div>
-
-          {/* 3. Compact Audio Controls */}
-          {isScrolled && videoId && (
-            <div className="px-3 pb-2 animate-fade-in flex flex-col items-center">
-              <div className="w-full bg-white/5 backdrop-blur-md rounded-2xl py-1 px-6 flex items-center justify-between border border-white/10 transition-all shadow-lg">
-                <button onClick={() => player?.seekTo(0)} className="text-primary/60 active:text-primary transition-colors p-2">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M6,18H8V6H6M9.5,12L18,18V6L9.5,12Z" /></svg>
-                </button>
-                <button onClick={() => skipTime(-10)} className="text-primary/60 active:text-primary transition-colors p-2">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M11.5,12L20,18V6M11,18V6L2.5,12L11,18Z" /></svg>
-                </button>
-                <button 
-                  onClick={handlePlayPause}
-                  className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 hover:bg-primary/20 active:scale-95 transition-all"
-                >
-                  {playerState === 1 ? (
-                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg>
-                  ) : (
-                    <svg className="w-5 h-5 ml-0.5" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
-                  )}
-                </button>
-                <button onClick={() => skipTime(10)} className="text-primary/60 active:text-primary transition-colors p-2">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M13,12L4.5,6V18M12.5,6V18L21,12L12.5,6Z" /></svg>
-                </button>
-                <button onClick={() => player?.seekTo(player.getDuration() - 1)} className="text-primary/60 active:text-primary transition-colors p-2">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M16,18H18V6H16M6,18L14.5,12L6,6V18Z" /></svg>
-                </button>
+            {/* Video Container - Smoothly collapses */}
+            <div 
+              className={`w-full transition-all duration-700 ease-in-out overflow-hidden bg-black shadow-2xl no-print ${isScrolled ? 'max-h-0 opacity-0' : 'max-h-[300px] opacity-100 mb-2'}`}
+            >
+              <div className="aspect-video w-full relative">
+                <div id="master-youtube-player" className="absolute inset-0 w-full h-full"></div>
               </div>
             </div>
-          )}
+            
+            {/* 3. Compact Audio Controls - Slides in when scrolled */}
+            <div 
+              className={`px-3 overflow-hidden transition-all duration-700 ease-in-out ${isScrolled ? 'max-h-20 opacity-100 pb-2 translate-y-0' : 'max-h-0 opacity-0 pointer-events-none translate-y-4'}`}
+            >
+              <div className="flex flex-col items-center">
+                <div className="w-full bg-white/5 backdrop-blur-md rounded-2xl py-1 px-6 flex items-center justify-between border border-white/10 shadow-lg">
+                  <button onClick={() => player?.seekTo(0)} className="text-primary/60 active:text-primary transition-colors p-2">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M6,18H8V6H6M9.5,12L18,18V6L9.5,12Z" /></svg>
+                  </button>
+                  <button onClick={() => skipTime(-10)} className="text-primary/60 active:text-primary transition-colors p-2">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M11.5,12L20,18V6M11,18V6L2.5,12L11,18Z" /></svg>
+                  </button>
+                  <button 
+                    onClick={handlePlayPause}
+                    className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 hover:bg-primary/20 active:scale-95 transition-all"
+                  >
+                    {playerState === 1 ? (
+                      <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5 ml-0.5" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
+                    )}
+                  </button>
+                  <button onClick={() => skipTime(10)} className="text-primary/60 active:text-primary transition-colors p-2">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M13,12L4.5,6V18M12.5,6V18L21,12L12.5,6Z" /></svg>
+                  </button>
+                  <button onClick={() => player?.seekTo(player.getDuration() - 1)} className="text-primary/60 active:text-primary transition-colors p-2">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M16,18H18V6H16M6,18L14.5,12L6,6V18Z" /></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
           
           {/* Ensure a fallback hidden container exists if scrolled and something goes wrong */}
           <div id="youtube-player-hidden-safe" className="hidden"></div>
