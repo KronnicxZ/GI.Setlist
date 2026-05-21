@@ -7,9 +7,6 @@ const dns = require('dns');
 const fs = require('fs');
 const path = require('path');
 
-// Forzar el uso de los servidores DNS de Google para resolver el registro SRV de MongoDB
-dns.setServers(['8.8.8.8', '8.8.4.4']);
-
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -23,17 +20,32 @@ app.use((req, res, next) => {
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/gi-setlist';
 
-console.log('Intentando conectar a MongoDB...');
 const maskedUri = MONGODB_URI.replace(/:([^@]+)@/, ':****@');
-console.log('URI:', maskedUri);
+console.log('MongoDB URI:', maskedUri);
 
-mongoose.connect(MONGODB_URI)
-    .then(() => {
-        console.log('✅ Connected to MongoDB Atlas');
-    })
-    .catch(err => {
-        console.error('❌ Error connecting to MongoDB:', err.message);
-    });
+// Serverless-safe connection. On Vercel each invocation may be a cold start;
+// the previous code called mongoose.connect() once at module load (fire and
+// forget) and ran queries immediately, so on cold starts Song.find() executed
+// before the connection was ready → buffering timeout → intermittent "no
+// data". We cache the connect promise across invocations and AWAIT it before
+// every request, so a live connection is guaranteed (and reused when warm).
+mongoose.set('bufferCommands', false);
+let cached = global._mongoose || (global._mongoose = { promise: null });
+async function dbConnect() {
+    if (mongoose.connection.readyState === 1) return; // already connected
+    if (!cached.promise) {
+        cached.promise = mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 8000 })
+            .then((m) => { console.log('✅ Connected to MongoDB Atlas'); return m; })
+            .catch((err) => { cached.promise = null; console.error('❌ Mongo connect error:', err.message); throw err; });
+    }
+    await cached.promise;
+}
+
+// Ensure a live DB connection before any route runs.
+app.use(async (req, res, next) => {
+    try { await dbConnect(); next(); }
+    catch (e) { res.status(503).json({ error: 'Base de datos no disponible, intenta de nuevo.' }); }
+});
 
 const Song = require('./models/Song');
 const Setlist = require('./models/Setlist');
