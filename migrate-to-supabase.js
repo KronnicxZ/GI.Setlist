@@ -24,7 +24,7 @@ const OWNER_EMAIL = process.env.OWNER_EMAIL || 'montillajose221@gmail.com';
 const LIBRARY_NAME = process.env.LIBRARY_NAME || 'Repertorio GI.Setlist';
 
 function fail(msg) { console.error('❌ ' + msg); process.exit(1); }
-if (!MONGODB_URI) fail('Falta MONGODB_URI');
+if (!process.env.SOURCE_API_URL && !MONGODB_URI) fail('Falta MONGODB_URI o SOURCE_API_URL');
 if (!SUPABASE_URL || !SERVICE_ROLE) fail('Falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
@@ -69,18 +69,34 @@ function songToRow(s, libraryId) {
   };
 }
 
-async function main() {
+// Carga songs+setlists desde la fuente: API HTTPS (si SOURCE_API_URL está
+// definida, recomendado cuando la red bloquea Mongo) o Mongo directo.
+async function loadSource() {
+  const api = process.env.SOURCE_API_URL; // ej. https://gi-setlist.vercel.app/api
+  if (api) {
+    console.log(`Leyendo datos desde la API: ${api}/backup …`);
+    const res = await fetch(`${api.replace(/\/$/, '')}/backup`);
+    if (!res.ok) fail(`API /backup respondió ${res.status}`);
+    const json = await res.json();
+    const d = (json && json.data) || {};
+    return { songs: d.songs || [], setlists: d.setlists || [] };
+  }
   console.log('Conectando a MongoDB…');
   await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 15000 });
   const Song = mongoose.model('Song', songSchema);
   const Setlist = mongoose.model('Setlist', setlistSchema);
+  return { songs: await Song.find().lean(), setlists: await Setlist.find().lean(), _mongo: true };
+}
+
+async function main() {
+  const src = await loadSource();
 
   const ownerId = await getOwnerId();
   const libraryId = await findOrCreateLibrary(ownerId);
 
   // ── Canciones ──
-  const songs = await Song.find().lean();
-  console.log(`Encontradas ${songs.length} canciones en Mongo.`);
+  const songs = src.songs;
+  console.log(`Encontradas ${songs.length} canciones.`);
   const idMap = {}; // mongoId -> supabaseUuid
   let migrated = 0;
   for (const batch of chunk(songs, 200)) {
@@ -93,8 +109,8 @@ async function main() {
   }
 
   // ── Setlists ──
-  const setlists = await Setlist.find().lean();
-  console.log(`Encontrados ${setlists.length} setlists en Mongo.`);
+  const setlists = src.setlists;
+  console.log(`Encontrados ${setlists.length} setlists.`);
   let setMigrated = 0;
   for (const sl of setlists) {
     const song_ids = (sl.songs || []).map((sid) => idMap[String(sid)]).filter(Boolean);
@@ -115,7 +131,7 @@ async function main() {
   console.log(`   GISETLIST_LIBRARY_ID = ${libraryId}`);
   console.log('──────────────────────────────────────────────\n');
 
-  await mongoose.disconnect();
+  if (src._mongo) await mongoose.disconnect();
   process.exit(0);
 }
 
