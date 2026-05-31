@@ -46,21 +46,32 @@ function rowToSong(r) {
   };
 }
 
+// IMPORTANTE — partial update seguro:
+// Solo incluimos en la fila los campos NO vacíos/undefined. Si el formulario
+// guarda una canción y deja un campo vacío, NO sobreescribimos en la BD (el
+// valor existente se preserva). Esto evita el bug por el que un guardado
+// común machacaba `youtube_url` (y otros) con NULL.
 function songToRow(s) {
-  const row = {
-    library_id: LIBRARY_ID,
+  const row = { library_id: LIBRARY_ID };
+  const fields = {
     title: s.title,
-    artist: s.artist || null,
-    lyrics: s.lyrics || null,
-    bpm: s.bpm != null && s.bpm !== '' ? String(s.bpm) : null,
-    notes: s.notes || null,
-    key: s.key || null,
-    original_key: s.originalKey || null,
-    vocalist_key: s.vocalistKey || null,
-    genre: s.genre || null,
-    youtube_url: s.youtubeUrl || null,
-    duration: s.duration != null && s.duration !== '' ? String(s.duration) : null,
+    artist: s.artist,
+    lyrics: s.lyrics,
+    bpm: s.bpm,
+    notes: s.notes,
+    key: s.key,
+    original_key: s.originalKey,
+    vocalist_key: s.vocalistKey,
+    genre: s.genre,
+    youtube_url: s.youtubeUrl,
+    duration: s.duration,
   };
+  for (const [k, v] of Object.entries(fields)) {
+    if (v === undefined || v === null) continue;
+    const str = String(v);
+    if (str === '') continue;
+    row[k] = str;
+  }
   return row;
 }
 
