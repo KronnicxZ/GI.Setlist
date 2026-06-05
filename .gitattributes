@@ -1,0 +1,13 @@
+# Normaliza los finales de línea a LF en todo el repo (evita que el working copy
+# en Windows quede en CRLF y rompa el format:check de Prettier en CI/Linux).
+* text=auto eol=lf
+
+# Binarios: sin conversión.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
