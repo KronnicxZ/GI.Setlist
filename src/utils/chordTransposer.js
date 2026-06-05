@@ -3,16 +3,17 @@ const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 // Expresión regular mejorada para detectar acordes musicales con todas las variaciones
 // Detecta: Notas base (A-G), alteraciones (#, b), calidades (m, maj, sus, dim, aug, etc),
 // tensiones, alteraciones (b5, #9) y bajos (/). Evita problemas con bordes de palabra (\b) y caracteres especiales como #.
-const CHORD_REGEX = /(^|\s|\()([A-G](?:b|#)?(?:maj|MAJ|Maj|MIN|Min|min|m|M|aug|AUG|Aug|dim|DIM|Dim|sus|SUS|Sus|add|ADD|Add|Δ|º|°|ø)?[0-9]*(?:sus[24]|add[0-9]+)?(?:[\(\+]?[#b0-9]+[\)\+]?)*(?:\/[A-G](?:b|#)?)?)(?=$|\s|\)|\r|\n|,|\.)/g;
+const CHORD_REGEX =
+  /(^|\s|\()([A-G](?:b|#)?(?:maj|MAJ|Maj|MIN|Min|min|m|M|aug|AUG|Aug|dim|DIM|Dim|sus|SUS|Sus|add|ADD|Add|Δ|º|°|ø)?[0-9]*(?:sus[24]|add[0-9]+)?(?:[\(\+]?[#b0-9]+[\)\+]?)*(?:\/[A-G](?:b|#)?)?)(?=$|\s|\)|\r|\n|,|\.)/g;
 
 // Función para normalizar un acorde a su forma con sostenidos
 const normalizeChord = (chord) => {
   const flatToSharp = {
-    'Db': 'C#',
-    'Eb': 'D#',
-    'Gb': 'F#',
-    'Ab': 'G#',
-    'Bb': 'A#'
+    Db: 'C#',
+    Eb: 'D#',
+    Gb: 'F#',
+    Ab: 'G#',
+    Bb: 'A#',
   };
 
   const match = chord.match(/^([A-G][b#]?)(.*)$/);
@@ -40,7 +41,8 @@ const transposeChord = (chord, semitones) => {
 // Función para limpiar acordes mal formados manualmente (ej: [D]# -> [D#], [A]m7 -> [Am7])
 const fixMalformedChords = (text) => {
   if (!text) return '';
-  const malformedRegex = /\[([A-G][b#]?[a-zA-Z0-9\+\-\/øº°]*)\]((?:#|b|m|maj|dim|aug|sus|add|M|[0-9]|\+|-|\/|ø|º|°)+)(?=$|\s|\)|\r|\n|,|\.)/gi;
+  const malformedRegex =
+    /\[([A-G][b#]?[a-zA-Z0-9\+\-\/øº°]*)\]((?:#|b|m|maj|dim|aug|sus|add|M|[0-9]|\+|-|\/|ø|º|°)+)(?=$|\s|\)|\r|\n|,|\.)/gi;
   return text.replace(malformedRegex, (match, inside, outside) => {
     return `[${inside}${outside}]`;
   });
@@ -53,37 +55,48 @@ const autoBracketChords = (text) => {
   let cleanedText = fixMalformedChords(text);
 
   // Procesar línea por línea
-  return cleanedText.split('\n').map(line => {
-    // Si la línea está vacía, retornar igual
-    if (!line.trim()) return line;
+  return cleanedText
+    .split('\n')
+    .map((line) => {
+      // Si la línea está vacía, retornar igual
+      if (!line.trim()) return line;
 
-    // Detectamos cuántos "acordes" potenciales hay
-    const words = line.trim().split(/\s+/);
+      // Detectamos cuántos "acordes" potenciales hay
+      const words = line.trim().split(/\s+/);
 
-    // Usar un bucle manual ya que CHORD_REGEX no soporta intersecciones bien con replace global si captura espacios
-    // Para simplificar, reemplazamos con la nueva lógica que captura prefijos
-    return line.replace(CHORD_REGEX, (match, prefix, chordMatch) => {
-      const fullTextMatch = prefix + chordMatch;
-      
-      // Evitar encerrar palabras sueltas como "A" o "E" o "I" si parecen parte de una oración normal (y la línea tiene muchas palabras)
-      if ((chordMatch === 'A' || chordMatch === 'E' || chordMatch === 'I') && words.length > 4 && !line.includes('  ')) {
-        return fullTextMatch;
-      }
+      // Usar un bucle manual ya que CHORD_REGEX no soporta intersecciones bien con replace global si captura espacios
+      // Para simplificar, reemplazamos con la nueva lógica que captura prefijos
+      return line.replace(CHORD_REGEX, (match, prefix, chordMatch) => {
+        const fullTextMatch = prefix + chordMatch;
 
-      // Evitar encerrar nombres de secciones si no tienen corchetes (ej: no convertir Coro en [Coro] si está en una oración)
-      const isSectionWord = /^(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Estribillo|Final)$/i.test(chordMatch);
-      if (isSectionWord && words.length > 1) {
-        return fullTextMatch;
-      }
+        // Evitar encerrar palabras sueltas como "A" o "E" o "I" si parecen parte de una oración normal (y la línea tiene muchas palabras)
+        if (
+          (chordMatch === 'A' || chordMatch === 'E' || chordMatch === 'I') &&
+          words.length > 4 &&
+          !line.includes('  ')
+        ) {
+          return fullTextMatch;
+        }
 
-      return `${prefix}[${chordMatch}]`;
-    });
-  }).join('\n');
+        // Evitar encerrar nombres de secciones si no tienen corchetes (ej: no convertir Coro en [Coro] si está en una oración)
+        const isSectionWord =
+          /^(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Estribillo|Final)$/i.test(
+            chordMatch
+          );
+        if (isSectionWord && words.length > 1) {
+          return fullTextMatch;
+        }
+
+        return `${prefix}[${chordMatch}]`;
+      });
+    })
+    .join('\n');
 };
 
-// Expresión regular para detectar secciones (Verso, Coro, etc.) 
+// Expresión regular para detectar secciones (Verso, Coro, etc.)
 // Ahora es más estricta: requiere estar entre corchetes o seguida de dos puntos
-const SECTION_REGEX = /(?:\[(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Pre-Coro|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final)\])|(?:\b(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Pre-Coro|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final)\b:)/gi;
+const SECTION_REGEX =
+  /(?:\[(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Pre-Coro|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final)\])|(?:\b(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Pre-Coro|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final)\b:)/gi;
 
 // Función para transponer texto con acordes (ahora soporta HTML)
 const transposeText = (text, semitones) => {
@@ -106,23 +119,24 @@ const formatLyricsForDisplay = (text) => {
 
   // 1. Procesar secciones: Detectar [Intro] o Intro: o Intro al inicio de línea
   // Soporta prefijos como "Pre-" (ej. Pre-Coro) y sufijos numéricos (ej. Verso II)
-  const sectionWords = '(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final)';
+  const sectionWords =
+    '(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final)';
 
-  // Regex mejorado: 
+  // Regex mejorado:
   // 1. Detecta secciones entre corchetes: [Solo], [Coro]
-  // 2. Detecta secciones seguidas de dos puntos: Intro:, Coro: 
+  // 2. Detecta secciones seguidas de dos puntos: Intro:, Coro:
   // 3. Detecta secciones que están SOLAS en una línea (sin más palabras después)
   const combinedSectionRegex = new RegExp(
     `(\\[(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\])|` + // [Intro]
-    `(\\b(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\b:)|` + // Intro:
-    `((?:^|\\r|\\n)\\s*(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\s*(?=\\r|\\n|$))`, // Isolated line
+      `(\\b(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\b:)|` + // Intro:
+      `((?:^|\\r|\\n)\\s*(?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?\\s*(?=\\r|\\n|$))`, // Isolated line
     'gi'
   );
 
   formatted = formatted.replace(combinedSectionRegex, (match, inBrackets, withColon, isAlone) => {
     // Si no es ninguna de las formas de sección confirmadas, no reemplazamos
     if (!inBrackets && !withColon && !isAlone) return match;
-    
+
     const cleanSection = match.trim().replace(/[\[\]:]/g, '');
     return `${isAlone && match.startsWith('\n') ? '\n' : ''}<span class="section-label">${cleanSection}</span>`;
   });
@@ -149,7 +163,8 @@ const formatLyricsForQuill = (text) => {
   let processed = autoBracketChords(text);
 
   // 2. Colorear secciones: [INTRO], [CORO], etc.
-  const sectionWords = '(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final|Prec-Coro|Pre coro|Pre-coro|Precoro)';
+  const sectionWords =
+    '(Verso|Coro|Puente|Intro|Outro|Solo|Instrumental|Interludio|Estribillo|Bridge|Chorus|Verse|Tag|Ending|Final|Prec-Coro|Pre coro|Pre-coro|Precoro)';
   // En el editor Quill, las secciones DEBEN estar entre corchetes para ser coloreadas
   const sectionRegex = new RegExp(`\\[((?:Pre[- ]?)?${sectionWords}(?:\\s+[IVX0-9]+)?)\\]`, 'gi');
 
@@ -168,4 +183,11 @@ const formatLyricsForQuill = (text) => {
   return processed;
 };
 
-export { transposeText, transposeChord, autoBracketChords, formatLyricsForDisplay, formatLyricsForQuill, NOTES };
+export {
+  transposeText,
+  transposeChord,
+  autoBracketChords,
+  formatLyricsForDisplay,
+  formatLyricsForQuill,
+  NOTES,
+};

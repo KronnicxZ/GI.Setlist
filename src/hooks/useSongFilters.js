@@ -4,21 +4,27 @@ import Fuse from 'fuse.js';
 export const useSongFilters = (songs, selectedSetlist, searchTerm, genreFilter, sortBy) => {
   const contextSongs = useMemo(() => {
     if (!selectedSetlist) return songs;
-    return selectedSetlist.songs.map(s => {
-      const sId = (s.id || s._id || s)?.toString();
-      return songs.find(song => {
-        const songId = (song.id || song._id)?.toString();
-        return songId === sId;
-      });
-    }).filter(Boolean);
+    return selectedSetlist.songs
+      .map((s) => {
+        const sId = (s.id || s._id || s)?.toString();
+        return songs.find((song) => {
+          const songId = (song.id || song._id)?.toString();
+          return songId === sId;
+        });
+      })
+      .filter(Boolean);
   }, [songs, selectedSetlist]);
 
   const filteredSongs = useMemo(() => {
     const normalize = (text) =>
-      text?.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      text
+        ?.toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
 
     // 1. Filtrar por género primero
-    let list = contextSongs.filter(song => {
+    let list = contextSongs.filter((song) => {
       return genreFilter === 'Todas' || normalize(song.genre) === normalize(genreFilter);
     });
 
@@ -27,10 +33,10 @@ export const useSongFilters = (songs, selectedSetlist, searchTerm, genreFilter, 
       const fuse = new Fuse(list, {
         keys: ['title', 'artist', 'genre'],
         threshold: 0.4, // Ajuste de sensibilidad (0.0 = exacto, 1.0 = todo coincide)
-        includeScore: true
+        includeScore: true,
       });
       const results = fuse.search(searchTerm);
-      list = results.map(r => r.item);
+      list = results.map((r) => r.item);
     }
 
     // 3. Si no hay búsqueda por término, o si estamos en una lista, aplicar ordenamiento
@@ -38,13 +44,19 @@ export const useSongFilters = (songs, selectedSetlist, searchTerm, genreFilter, 
 
     if (!searchTerm.trim()) {
       return list.sort((a, b) => {
-        const compareStrings = (s1, s2) => (s1 || '').toString().localeCompare((s2 || '').toString());
+        const compareStrings = (s1, s2) =>
+          (s1 || '').toString().localeCompare((s2 || '').toString());
         switch (sortBy) {
-          case 'title': return compareStrings(a.title, b.title);
-          case 'artist': return compareStrings(a.artist, b.artist);
-          case 'genre': return compareStrings(a.genre, b.genre);
-          case 'bpm': return (parseInt(a.bpm) || 0) - (parseInt(b.bpm) || 0);
-          case 'key': return compareStrings(a.key, b.key);
+          case 'title':
+            return compareStrings(a.title, b.title);
+          case 'artist':
+            return compareStrings(a.artist, b.artist);
+          case 'genre':
+            return compareStrings(a.genre, b.genre);
+          case 'bpm':
+            return (parseInt(a.bpm) || 0) - (parseInt(b.bpm) || 0);
+          case 'key':
+            return compareStrings(a.key, b.key);
           default:
             return (b._id || b.id || '').toString().localeCompare((a._id || a.id || '').toString());
         }

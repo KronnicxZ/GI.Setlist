@@ -3,7 +3,7 @@ export const extractYoutubeVideoId = (url) => {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url?.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
+  return match && match[2].length === 11 ? match[2] : null;
 };
 
 // Función para convertir la duración de YouTube (ISO 8601) a formato legible
@@ -50,7 +50,7 @@ export const getVideoDetails = async (videoId) => {
     return {
       title: data.title,
       channelTitle: data.channelTitle,
-      duration: formatDuration(data.durationRaw)
+      duration: formatDuration(data.durationRaw),
     };
   } catch (error) {
     console.error('Error fetching video details via proxy:', error);

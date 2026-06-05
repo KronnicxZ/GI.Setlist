@@ -87,12 +87,7 @@ export const Button = ({
       ]}
     >
       <Text
-        style={[
-          styles.text,
-          { color: getTextColor() },
-          disabled && styles.disabledText,
-          textStyle,
-        ]}
+        style={[styles.text, { color: getTextColor() }, disabled && styles.disabledText, textStyle]}
       >
         {title}
       </Text>
@@ -117,4 +112,4 @@ const styles = StyleSheet.create({
   disabledText: {
     opacity: 0.5,
   },
-}); 
+});

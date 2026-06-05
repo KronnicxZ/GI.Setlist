@@ -8,7 +8,9 @@ const Song = ({ song, onEdit, onDelete }) => {
   return (
     <Card sx={{ mb: 2, bgcolor: 'background.paper' }}>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}
+        >
           <Box>
             <Typography variant="h5" component="h2">
               {song.title}
@@ -42,7 +44,7 @@ const Song = ({ song, onEdit, onDelete }) => {
               mt: 2,
               p: 2,
               bgcolor: 'background.default',
-              borderRadius: 1
+              borderRadius: 1,
             }}
           >
             {song.lyrics}
@@ -50,10 +52,7 @@ const Song = ({ song, onEdit, onDelete }) => {
         )}
 
         {song.notes && (
-          <Typography
-            color="text.secondary"
-            sx={{ mt: 2, fontStyle: 'italic' }}
-          >
+          <Typography color="text.secondary" sx={{ mt: 2, fontStyle: 'italic' }}>
             {song.notes}
           </Typography>
         )}
@@ -62,4 +61,4 @@ const Song = ({ song, onEdit, onDelete }) => {
   );
 };
 
-export default Song; 
+export default Song;

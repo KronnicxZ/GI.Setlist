@@ -93,7 +93,9 @@ function rowToSetlist(r, songsById) {
 
 function setlistToRow(s) {
   const songs = Array.isArray(s.songs) ? s.songs : [];
-  const song_ids = songs.map((x) => (x && typeof x === 'object' ? (x._id || x.id) : x)).filter(Boolean);
+  const song_ids = songs
+    .map((x) => (x && typeof x === 'object' ? x._id || x.id : x))
+    .filter(Boolean);
   return {
     library_id: LIBRARY_ID,
     name: s.name,
@@ -105,7 +107,10 @@ function setlistToRow(s) {
 // ── Canciones ───────────────────────────────────────────────────────────────
 async function listSongs(columns = '*') {
   const { data, error } = await supabase
-    .from('songs').select(columns).eq('library_id', LIBRARY_ID).order('created_at', { ascending: true });
+    .from('songs')
+    .select(columns)
+    .eq('library_id', LIBRARY_ID)
+    .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
   return (data || []).map(rowToSong);
 }
@@ -120,7 +125,12 @@ async function createSong(body) {
   return rowToSong(data);
 }
 async function updateSong(id, body) {
-  const { data, error } = await supabase.from('songs').update(songToRow(body)).eq('id', id).select('*').single();
+  const { data, error } = await supabase
+    .from('songs')
+    .update(songToRow(body))
+    .eq('id', id)
+    .select('*')
+    .single();
   if (error) throw new Error(error.message);
   return rowToSong(data);
 }
@@ -133,12 +143,17 @@ async function deleteSong(id) {
 async function songsByIdMap() {
   const songs = await listSongs('*');
   const map = {};
-  songs.forEach((s) => { map[s._id] = s; });
+  songs.forEach((s) => {
+    map[s._id] = s;
+  });
   return map;
 }
 async function listSetlists() {
   const { data, error } = await supabase
-    .from('setlists').select('*').eq('library_id', LIBRARY_ID).order('created_at', { ascending: true });
+    .from('setlists')
+    .select('*')
+    .eq('library_id', LIBRARY_ID)
+    .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
   const map = await songsByIdMap();
   return (data || []).map((r) => rowToSetlist(r, map));
@@ -150,12 +165,21 @@ async function getSetlist(id) {
   return rowToSetlist(data, map);
 }
 async function createSetlist(body) {
-  const { data, error } = await supabase.from('setlists').insert(setlistToRow(body)).select('*').single();
+  const { data, error } = await supabase
+    .from('setlists')
+    .insert(setlistToRow(body))
+    .select('*')
+    .single();
   if (error) throw new Error(error.message);
   return rowToSetlist(data, await songsByIdMap());
 }
 async function updateSetlist(id, body) {
-  const { data, error } = await supabase.from('setlists').update(setlistToRow(body)).eq('id', id).select('*').single();
+  const { data, error } = await supabase
+    .from('setlists')
+    .update(setlistToRow(body))
+    .eq('id', id)
+    .select('*')
+    .single();
   if (error) throw new Error(error.message);
   return rowToSetlist(data, await songsByIdMap());
 }
@@ -179,7 +203,7 @@ async function replaceAll(songs, setlists) {
     const rows = songs.map((s) => {
       const row = songToRow(s);
       const id = s._id || s.id;
-      if (id) row.id = id;                 // preservar id → refs intactas
+      if (id) row.id = id; // preservar id → refs intactas
       if (s.createdAt) row.created_at = s.createdAt;
       return row;
     });
@@ -201,9 +225,21 @@ async function replaceAll(songs, setlists) {
 }
 
 module.exports = {
-  supabase, LIBRARY_ID,
-  rowToSong, songToRow, rowToSetlist, setlistToRow,
-  listSongs, getSong, createSong, updateSong, deleteSong,
-  listSetlists, getSetlist, createSetlist, updateSetlist, deleteSetlist,
+  supabase,
+  LIBRARY_ID,
+  rowToSong,
+  songToRow,
+  rowToSetlist,
+  setlistToRow,
+  listSongs,
+  getSong,
+  createSong,
+  updateSong,
+  deleteSong,
+  listSetlists,
+  getSetlist,
+  createSetlist,
+  updateSetlist,
+  deleteSetlist,
   replaceAll,
 };
