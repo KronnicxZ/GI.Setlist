@@ -46,6 +46,7 @@ export const useData = (apiUrl) => {
       headers: authHeaders(),
       body: JSON.stringify(songData)
     });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'No se pudo guardar la canción');
     const savedSong = await response.json();
     const formattedSong = { ...savedSong, id: savedSong._id };
     
@@ -60,7 +61,8 @@ export const useData = (apiUrl) => {
   const deleteSong = async (idOrIds) => {
     const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
     for (const id of ids) {
-      await fetch(`${apiUrl}/songs/${id}`, { method: 'DELETE', headers: adminAuthHeaders() });
+      const res = await fetch(`${apiUrl}/songs/${id}`, { method: 'DELETE', headers: adminAuthHeaders() });
+      if (!res.ok) throw new Error('No se pudo eliminar la canción');
     }
     setSongs(prev => prev.filter(s => !ids.includes(s.id)));
   };
@@ -73,6 +75,7 @@ export const useData = (apiUrl) => {
       headers: authHeaders(),
       body: JSON.stringify(setlistData)
     });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'No se pudo guardar el setlist');
     const savedSetlist = await response.json();
     const formattedSetlist = { ...savedSetlist, id: savedSetlist._id };
     
@@ -85,7 +88,8 @@ export const useData = (apiUrl) => {
   };
 
   const deleteSetlist = async (id) => {
-    await fetch(`${apiUrl}/setlists/${id}`, { method: 'DELETE', headers: adminAuthHeaders() });
+    const res = await fetch(`${apiUrl}/setlists/${id}`, { method: 'DELETE', headers: adminAuthHeaders() });
+    if (!res.ok) throw new Error('No se pudo eliminar el setlist');
     setSetlists(prev => prev.filter(s => s.id !== id));
   };
 

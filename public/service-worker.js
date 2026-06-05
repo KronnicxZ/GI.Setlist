@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gi-setlist-v4-pwa';
+const CACHE_NAME = 'gi-setlist-v5-pwa';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -21,23 +21,25 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+    const { request } = event;
+    // Solo cacheamos GET. Nunca interceptamos escrituras (POST/PUT/DELETE).
+    if (request.method !== 'GET') return;
+    const url = new URL(request.url);
+    // Las respuestas de /api/ son datos que cambian: NUNCA cachear (servir datos
+    // viejos tras estar offline causaba canciones/setlists desactualizados).
+    if (url.pathname.startsWith('/api/')) return; // network-only para la API
+
     event.respondWith(
-        // Estrategia Network-First: intentar red primero, caché como fallback
-        fetch(event.request)
+        // Network-First para assets estáticos: red primero, caché como fallback.
+        fetch(request)
             .then(response => {
-                // Si la respuesta es válida, clonarla y guardarla en caché
-                if (response && response.status === 200) {
+                if (response && response.status === 200 && url.origin === self.location.origin) {
                     const responseToCache = response.clone();
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseToCache);
-                    });
+                    caches.open(CACHE_NAME).then(cache => cache.put(request, responseToCache));
                 }
                 return response;
             })
-            .catch(() => {
-                // Si falla la red, intentar obtener del caché
-                return caches.match(event.request);
-            })
+            .catch(() => caches.match(request))
     );
 });
 
