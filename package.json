@@ -37,15 +37,21 @@
     "start": "react-scripts start",
     "server": "nodemon server/server.js",
     "dev": "concurrently \"npm start\" \"npm run server\"",
-    "build": "CI=false react-scripts build",
+    "build": "cross-env CI=false react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "format": "prettier --write \"src/**/*.{js,jsx,css}\" \"server/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,css}\" \"server/**/*.js\""
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
     ]
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "prettier": "^3.3.3"
   },
   "browserslist": {
     "production": [
