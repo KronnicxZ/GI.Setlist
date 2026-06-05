@@ -37,6 +37,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
 
   const [loadingVideo, setLoadingVideo] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [aiError, setAiError] = useState('');
   const [videoId, setVideoId] = useState(extractYoutubeVideoId(initialData?.youtubeUrl));
   const [showGenreMenu, setShowGenreMenu] = useState(false);
   const quillRef = useRef(null);
@@ -302,9 +303,10 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
             type="button"
             onClick={async () => {
               if (!formData.title || !formData.artist) {
-                alert("Por favor ingresa primero el Título y Artista.");
+                setAiError('Ingresá primero el título y el artista.');
                 return;
               }
+              setAiError('');
               setLoadingAI(true);
               try {
                 // Determine base URL, local development proxy or prod URL.
@@ -342,10 +344,10 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
                     key: data.key || prev.key
                   }));
                 } else {
-                  alert(data.error || 'Error al generar letra.');
+                  setAiError(data.error || 'No se pudo generar la letra.');
                 }
               } catch(e) {
-                alert('No se pudo conectar con el servidor.');
+                setAiError('No se pudo conectar con el servidor.');
               }
               setLoadingAI(false);
             }}
@@ -364,6 +366,11 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
                 </>
             )}
           </button>
+          {aiError && (
+            <p className="mt-2 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-sub px-3 py-2">
+              {aiError}
+            </p>
+          )}
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">

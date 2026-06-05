@@ -84,14 +84,14 @@ function App() {
       await saveSong(data, editingSong?.id);
       setShowSongForm(false);
       setEditingSong(null);
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error(err); setErrorAlert({ isOpen: true, message: err.message || 'No se pudo guardar la canción' }); }
   };
 
   const onConfirmDuplicate = async (data) => {
     try {
       await saveSong(data);
       setSongToDuplicate(null);
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error(err); setErrorAlert({ isOpen: true, message: err.message || 'No se pudo duplicar la canción' }); }
   };
 
   const onDeleteSongHandler = (idOrIds, callback) => {
@@ -105,7 +105,7 @@ function App() {
     try {
       await deleteSong(songToDeleteInfo.ids || songToDeleteInfo.id);
       if (songToDeleteInfo.onSuccess) songToDeleteInfo.onSuccess();
-    } catch (err) { console.error(err); } finally {
+    } catch (err) { console.error(err); setErrorAlert({ isOpen: true, message: err.message || 'No se pudo eliminar' }); } finally {
       setIsDeleteSongModalOpen(false);
       setSongToDeleteInfo(null);
     }
@@ -116,7 +116,7 @@ function App() {
       await saveSetlist(data, editingSetlist?.id);
       setShowSetlistForm(false);
       setEditingSetlist(null);
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error(err); setErrorAlert({ isOpen: true, message: err.message || 'No se pudo guardar el setlist' }); }
   };
 
   const onRemoveFromSetlistHandler = async (idOrIds, callback) => {
