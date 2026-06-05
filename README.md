@@ -53,22 +53,22 @@ Una Progressive Web App (PWA) moderna y elegante diseñada para ayudar a equipos
 - **Service Worker** - Funcionalidad offline
 
 ### Backend
-- **Node.js + Express** - API REST
-- **MongoDB Atlas** - Base de datos en la nube
-- **Mongoose** - ODM para MongoDB
+- **Node.js + Express** - API REST (funciones serverless en Vercel)
+- **Supabase (PostgreSQL)** - Base de datos en la nube, **fuente única compartida con LivePads**
+- **service_role key** - acceso solo-backend a Supabase (se salta RLS)
 
 ### Integraciones
-- **YouTube API** - Reproducción de videos y obtención de duraciones
-- **YouTube IFrame API** - Player embebido
+- **YouTube API** - Datos de videos (título, canal) y player embebido
+- **Groq / OpenRouter** - generación de acordes y chat asistente (IA)
 
 ---
 
 ## 📦 Instalación
 
 ### Prerrequisitos
-- Node.js 14+ y npm
-- Cuenta de MongoDB Atlas
-- API Key de YouTube (opcional, para duraciones)
+- Node.js 16+ y npm
+- Proyecto de Supabase (URL + service_role key) — el mismo que usa LivePads
+- API Keys de Groq / OpenRouter (IA) y de YouTube (opcional)
 
 ### Pasos
 
@@ -85,12 +85,11 @@ npm install
 
 3. **Configura variables de entorno**
 
-Crea un archivo `.env` en la raíz:
-```env
-MONGODB_URI=tu_mongodb_connection_string
-YOUTUBE_API_KEY=tu_youtube_api_key
-PORT=5000
+Copiá `.env.example` a `.env` y completá los valores (Supabase, admin, IA, YouTube):
+```bash
+cp .env.example .env
 ```
+Mínimo indispensable: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GISETLIST_LIBRARY_ID` y `ADMIN_PASSWORD`. Ver [.env.example](.env.example) para la lista completa.
 
 4. **Inicia el proyecto**
 ```bash
@@ -112,11 +111,9 @@ GI-Setlist/
 │   ├── index.html         # HTML principal
 │   ├── manifest.json      # Configuración PWA
 │   └── service-worker.js  # Service Worker para offline
-├── server/                # Backend
-│   ├── models/           # Modelos de MongoDB
-│   │   ├── Song.js
-│   │   └── Setlist.js
-│   └── server.js         # Servidor Express
+├── server/                # Backend (Express, serverless en Vercel)
+│   ├── db.js             # Capa de datos sobre Supabase (mapeo de campos)
+│   └── server.js         # Servidor Express + endpoints (API, IA, YouTube, auth)
 ├── src/                   # Frontend
 │   ├── components/       # Componentes React
 │   │   ├── AdminPanel.js
@@ -215,7 +212,7 @@ Desarrollado con ❤️ para la comunidad de alabanza
 ## 🙏 Agradecimientos
 
 - **Elevation Worship** y otros artistas por la inspiración musical
-- **MongoDB** por la base de datos en la nube
+- **Supabase** por la base de datos en la nube
 - **YouTube** por la API de videos
 - **Vercel** por el hosting gratuito
 

@@ -1,235 +1,99 @@
-# 🚀 Guía de Despliegue - GI Setlist
+# 🚀 Guía de Despliegue — GI Setlist
 
-Esta guía te ayudará a desplegar tu aplicación en producción.
+GI.Setlist se despliega **unificado en Vercel**: el frontend (build de React) y el
+backend (Express como funciones serverless) viven en el mismo proyecto, según
+`vercel.json`. La base de datos es **Supabase** (la misma que usa LivePads).
 
 ---
 
 ## 📋 Pre-requisitos
 
-Antes de desplegar, asegúrate de tener:
-
-- ✅ Cuenta de MongoDB Atlas configurada
-- ✅ API Key de YouTube (opcional)
-- ✅ Repositorio Git (GitHub, GitLab, etc.)
-- ✅ Cuenta en Vercel o Netlify (frontend)
-- ✅ Cuenta en Render, Railway o Heroku (backend)
+- ✅ Proyecto de **Supabase** (URL + `service_role` key) — el mismo de LivePads
+- ✅ Id de la librería maestra de GI.Setlist (`GISETLIST_LIBRARY_ID`)
+- ✅ API Keys de **Groq** y **OpenRouter** (IA) y de **YouTube** (opcional)
+- ✅ Repositorio en GitHub conectado a **Vercel**
 
 ---
 
-## 🌐 Opción 1: Despliegue Separado (Recomendado)
+## 🌐 Despliegue en Vercel (unificado)
 
-### Frontend en Vercel
+El `vercel.json` ya está configurado: build de React a `build/`, el server a
+funciones serverless, y el ruteo `/api/* → server/server.js`, resto → SPA.
 
-1. **Conecta tu repositorio**
-   - Ve a [vercel.com](https://vercel.com)
-   - Haz clic en "New Project"
-   - Importa tu repositorio de GitHub
+1. **Conectá el repo** en [vercel.com](https://vercel.com) → New Project → import.
+2. **Framework Preset:** Create React App · **Build:** `npm run build` · **Output:** `build`.
+3. **Variables de entorno** (Project Settings → Environment Variables) — ver
+   [.env.example](.env.example) para la lista completa:
 
-2. **Configura el proyecto**
-   ```
-   Framework Preset: Create React App
-   Root Directory: ./
-   Build Command: npm run build
-   Output Directory: build
-   ```
+   | Variable | Obligatoria | Para qué |
+   |---|---|---|
+   | `SUPABASE_URL` | ✅ | URL del proyecto Supabase |
+   | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | acceso backend (se salta RLS) — **secreta** |
+   | `GISETLIST_LIBRARY_ID` | ✅ | librería maestra en Supabase |
+   | `ADMIN_PASSWORD` | ✅ | modo admin (sin ella el login queda deshabilitado) |
+   | `GROQ_API_KEY` | ⬜ | generación de acordes + chat IA |
+   | `OPENROUTER_API_KEY` | ⬜ | fallback de IA |
+   | `YOUTUBE_API_KEY` | ⬜ | datos de videos de YouTube |
 
-3. **Variables de entorno**
-   ```
-   REACT_APP_API_URL=https://tu-backend.onrender.com
-   ```
+4. **Deploy.** Quedará todo en una sola URL (`https://<proyecto>.vercel.app`).
 
-4. **Despliega**
-   - Haz clic en "Deploy"
-   - Espera a que termine el build
-   - Tu frontend estará en `https://tu-proyecto.vercel.app`
-
-### Backend en Render
-
-1. **Crea un nuevo Web Service**
-   - Ve a [render.com](https://render.com)
-   - Haz clic en "New +" → "Web Service"
-   - Conecta tu repositorio
-
-2. **Configura el servicio**
-   ```
-   Name: gi-setlist-api
-   Environment: Node
-   Build Command: npm install
-   Start Command: node server/server.js
-   ```
-
-3. **Variables de entorno**
-   ```
-   MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/gi-setlist
-   YOUTUBE_API_KEY=tu_api_key_de_youtube
-   PORT=5000
-   NODE_ENV=production
-   ```
-
-4. **Despliega**
-   - Haz clic en "Create Web Service"
-   - Espera a que termine el despliegue
-   - Tu backend estará en `https://tu-proyecto.onrender.com`
-
-5. **Actualiza el frontend**
-   - Ve a Vercel
-   - Actualiza la variable `REACT_APP_API_URL` con la URL de Render
-   - Redespliega
+> ⚠️ **Importante:** `ADMIN_PASSWORD` debe estar seteada en Vercel. El backend
+> **falla cerrado** (no acepta logins) si no está, así que sin ella nadie puede
+> entrar en modo admin.
 
 ---
 
-## 🔧 Opción 2: Despliegue Unificado en Vercel
+## 💻 Desarrollo local
 
-Si quieres desplegar todo en Vercel:
+```bash
+cp .env.example .env   # completá los valores
+npm install
+npm run dev            # frontend :3000 + backend :5000 (proxy /api → :5000)
+```
 
-1. **Configura vercel.json** (ya está incluido)
-   ```json
-   {
-     "version": 2,
-     "builds": [
-       {
-         "src": "package.json",
-         "use": "@vercel/static-build",
-         "config": { "distDir": "build" }
-       },
-       {
-         "src": "server/server.js",
-         "use": "@vercel/node"
-       }
-     ],
-     "routes": [
-       { "src": "/api/(.*)", "dest": "/server/server.js" },
-       { "src": "/(.*)", "dest": "/build/$1" }
-     ]
-   }
-   ```
-
-2. **Variables de entorno en Vercel**
-   ```
-   MONGODB_URI=tu_mongodb_uri
-   YOUTUBE_API_KEY=tu_youtube_api_key
-   ```
-
-3. **Despliega**
-   - Conecta tu repo en Vercel
-   - Vercel detectará automáticamente la configuración
-   - Todo estará en una sola URL
+El `proxy` de `package.json` (`http://localhost:5000`) hace que el frontend en
+`:3000` llame a `/api/*` y se redirija al server local.
 
 ---
 
-## 🗄️ Configuración de MongoDB Atlas
+## 🔒 Seguridad en producción
 
-1. **Crea un cluster**
-   - Ve a [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-   - Crea un cluster gratuito (M0)
-
-2. **Configura acceso**
-   - Database Access → Add New Database User
-   - Network Access → Add IP Address → Allow Access from Anywhere (0.0.0.0/0)
-
-3. **Obtén la connection string**
-   - Clusters → Connect → Connect your application
-   - Copia la URI: `mongodb+srv://usuario:password@cluster.mongodb.net/gi-setlist`
-
-4. **Actualiza .env**
-   ```
-   MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/gi-setlist
-   ```
+- **`service_role`**: solo en el backend (env vars de Vercel). Nunca en el cliente.
+- **CORS**: restringido a los orígenes de producción en `server/server.js`.
+- **Auth**: los endpoints de escritura exigen el token de admin (header
+  `x-admin-token`) que el frontend obtiene al iniciar sesión.
+- **HTTPS**: requerido (Vercel lo provee) — necesario para la PWA.
 
 ---
 
-## 🔑 API Key de YouTube (Opcional)
+## ✅ Checklist de despliegue
 
-Para obtener duraciones de videos automáticamente:
-
-1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
-2. Crea un nuevo proyecto
-3. Habilita "YouTube Data API v3"
-4. Credentials → Create Credentials → API Key
-5. Copia la API Key y agrégala a tus variables de entorno
-
----
-
-## ✅ Checklist de Despliegue
-
-Antes de desplegar, verifica:
-
-- [ ] `.env` está en `.gitignore` (no subir credenciales)
-- [ ] MongoDB Atlas está configurado y accesible
-- [ ] Variables de entorno están configuradas en el servicio de hosting
-- [ ] CORS está configurado correctamente en el backend
-- [ ] Service Worker está funcionando (prueba en localhost primero)
-- [ ] Manifest.json tiene la información correcta
-- [ ] Favicon.png existe en /public
-- [ ] Build de producción funciona localmente (`npm run build`)
-
----
-
-## 🔒 Seguridad en Producción
-
-1. **CORS**: Actualiza en `server/server.js`
-   ```javascript
-   const allowedOrigins = [
-     'https://tu-frontend.vercel.app',
-     'https://tu-dominio-custom.com'
-   ];
-   ```
-
-2. **Variables de entorno**: Nunca expongas credenciales en el código
-
-3. **HTTPS**: Asegúrate de que tanto frontend como backend usen HTTPS
-
-4. **Rate Limiting**: Considera añadir rate limiting al backend
+- [ ] `.env` está en `.gitignore` (no subir credenciales) — ya configurado
+- [ ] Variables de entorno cargadas en Vercel (incluida `ADMIN_PASSWORD`)
+- [ ] Supabase accesible y `GISETLIST_LIBRARY_ID` correcto
+- [ ] CORS apunta al dominio de producción
+- [ ] `npm run build` funciona localmente
+- [ ] Service Worker y `manifest.json` correctos (probar en localhost primero)
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Error: "Cannot connect to MongoDB"
-- Verifica que la IP esté permitida en MongoDB Atlas
-- Verifica que la connection string sea correcta
-- Verifica que el usuario tenga permisos
+**No puedo entrar en modo admin** → verificá que `ADMIN_PASSWORD` esté seteada en
+Vercel (sin ella el login falla cerrado).
 
-### Error: "CORS policy"
-- Verifica que el origen del frontend esté en `allowedOrigins`
-- Verifica que el backend esté corriendo
+**Error de CORS** → agregá el origen del frontend a la lista de orígenes
+permitidos en `server/server.js`.
 
-### Service Worker no se actualiza
-- Limpia el caché del navegador
-- Desregistra el SW en DevTools → Application → Service Workers
-- Incrementa la versión en `service-worker.js`
+**"No data" / canciones vacías** → revisá `SUPABASE_URL`,
+`SUPABASE_SERVICE_ROLE_KEY` y `GISETLIST_LIBRARY_ID`.
 
-### PWA no se puede instalar
-- Verifica que tengas HTTPS (requerido en producción)
-- Verifica que `manifest.json` esté correctamente configurado
-- Verifica que el Service Worker esté registrado
-
----
-
-## 📊 Monitoreo
-
-Después del despliegue:
-
-1. **Vercel/Render Dashboard**: Monitorea logs y errores
-2. **MongoDB Atlas**: Monitorea uso de base de datos
-3. **Google Analytics** (opcional): Añade tracking de usuarios
+**El Service Worker no se actualiza** → DevTools → Application → Service Workers →
+Unregister, y subí la versión del cache en `public/service-worker.js`.
 
 ---
 
 ## 🔄 Actualizaciones
 
-Para actualizar la app en producción:
-
-1. Haz cambios en tu código local
-2. Commit y push a GitHub
-3. Vercel/Render detectarán el cambio y redesplegarán automáticamente
-
----
-
-## 🎉 ¡Listo!
-
-Tu app debería estar funcionando en:
-- Frontend: `https://tu-proyecto.vercel.app`
-- Backend: `https://tu-proyecto.onrender.com`
-
-**¡Comparte la URL con tu equipo de alabanza! 🎸✨**
+Push a la rama de producción → Vercel redespliega automáticamente (frontend +
+funciones serverless).
