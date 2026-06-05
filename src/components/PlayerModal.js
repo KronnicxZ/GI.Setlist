@@ -50,13 +50,13 @@ const PlayerModal = ({ song, onClose }) => {
     synth.current = new Tone.MembraneSynth({
       pitchDecay: 0.001,
       octaves: 1,
-      oscillator: { type: "sine" },
+      oscillator: { type: 'sine' },
       envelope: {
         attack: 0.001,
         decay: 0.1,
         sustain: 0,
-        release: 0.1
-      }
+        release: 0.1,
+      },
     }).toDestination();
 
     return () => {
@@ -86,9 +86,9 @@ const PlayerModal = ({ song, onClose }) => {
 
         // 1. Sound Logic (Claro y distinguible)
         if (beat === 0) {
-          synth.current.triggerAttackRelease("C6", "32n", time, 1.0);
+          synth.current.triggerAttackRelease('C6', '32n', time, 1.0);
         } else {
-          synth.current.triggerAttackRelease("C5", "32n", time, 0.5);
+          synth.current.triggerAttackRelease('C5', '32n', time, 0.5);
         }
 
         // 2. UI Sync
@@ -98,10 +98,10 @@ const PlayerModal = ({ song, onClose }) => {
 
         // 3. Increment counter
         beatCounter.current = (beat + 1) % beatsPerMeasure;
-      }, "4n");
+      }, '4n');
 
-      if (Tone.getTransport().state !== "started") {
-        Tone.getTransport().start("+0.05");
+      if (Tone.getTransport().state !== 'started') {
+        Tone.getTransport().start('+0.05');
       }
     } else {
       if (repeatId.current !== null) {
@@ -130,7 +130,7 @@ const PlayerModal = ({ song, onClose }) => {
     // Load API
     if (!window.YT) {
       const tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
+      tag.src = 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
     }
@@ -144,16 +144,16 @@ const PlayerModal = ({ song, onClose }) => {
           width: '100%',
           videoId: videoId,
           playerVars: {
-            'autoplay': 0,
-            'controls': 1,
-            'rel': 0,
-            'modestbranding': 1,
-            'playsinline': 1
+            autoplay: 0,
+            controls: 1,
+            rel: 0,
+            modestbranding: 1,
+            playsinline: 1,
           },
           events: {
-            'onReady': (event) => setPlayer(event.target),
-            'onStateChange': (event) => setPlayerState(event.data)
-          }
+            onReady: (event) => setPlayer(event.target),
+            onStateChange: (event) => setPlayerState(event.data),
+          },
         });
       }
     }, 500);
@@ -163,14 +163,16 @@ const PlayerModal = ({ song, onClose }) => {
 
   const handlePlayPause = () => {
     if (!player || typeof player.getPlayerState !== 'function') return;
-    
+
     const state = player.getPlayerState();
-    if (state === 1) { // Playing
+    if (state === 1) {
+      // Playing
       player.pauseVideo();
     } else {
       // In mobile, sometimes we need to ensure the video is cued/loaded
       // if it hasn't been touched yet.
-      if (state === -1 || state === 5) { // Unstarted or Cued
+      if (state === -1 || state === 5) {
+        // Unstarted or Cued
         player.playVideo();
       } else {
         player.playVideo();
@@ -196,7 +198,8 @@ const PlayerModal = ({ song, onClose }) => {
       }
     };
 
-    if (playerState === 1) { // YT.PlayerState.PLAYING
+    if (playerState === 1) {
+      // YT.PlayerState.PLAYING
       // Initial update
       updateTime();
       // Regular interval
@@ -227,13 +230,13 @@ const PlayerModal = ({ song, onClose }) => {
   const getCurrentKey = () => {
     if (!song?.key) return '-';
     if (semitones === 0) return song.key;
-    
+
     // Simple transposition logic for the key label
     const baseKey = song.key.split(' ')[0].toUpperCase();
     const isMinor = song.key.toLowerCase().includes('m');
     const index = musicalNotes.indexOf(baseKey);
     if (index === -1) return song.key;
-    
+
     let newIndex = (index + semitones) % 12;
     if (newIndex < 0) newIndex += 12;
     return musicalNotes[newIndex] + (isMinor ? 'm' : '');
@@ -259,13 +262,23 @@ const PlayerModal = ({ song, onClose }) => {
     const [, base, suffix] = match;
 
     const keyMap = {
-      'C': 'C', 'C#': 'Csharp', 'Db': 'Csharp',
-      'D': 'D', 'D#': 'Eb', 'Eb': 'Eb',
-      'E': 'E',
-      'F': 'F', 'F#': 'Fsharp', 'Gb': 'Fsharp',
-      'G': 'G', 'G#': 'Ab', 'Ab': 'Ab',
-      'A': 'A', 'A#': 'Bb', 'Bb': 'Bb',
-      'B': 'B'
+      C: 'C',
+      'C#': 'Csharp',
+      Db: 'Csharp',
+      D: 'D',
+      'D#': 'Eb',
+      Eb: 'Eb',
+      E: 'E',
+      F: 'F',
+      'F#': 'Fsharp',
+      Gb: 'Fsharp',
+      G: 'G',
+      'G#': 'Ab',
+      Ab: 'Ab',
+      A: 'A',
+      'A#': 'Bb',
+      Bb: 'Bb',
+      B: 'B',
     };
 
     const mappedKey = keyMap[base];
@@ -273,17 +286,17 @@ const PlayerModal = ({ song, onClose }) => {
 
     const suffixMap = {
       '': 'major',
-      'M': 'major',
-      'maj': 'major',
-      'm': 'minor',
-      'min': 'minor',
+      M: 'major',
+      maj: 'major',
+      m: 'minor',
+      min: 'minor',
       '-': 'minor',
-      'M7': 'maj7',
-      'sus': 'sus4',
-      'º': 'dim',
+      M7: 'maj7',
+      sus: 'sus4',
+      º: 'dim',
       '°': 'dim',
-      'ø': 'm7b5',
-      '+': 'aug'
+      ø: 'm7b5',
+      '+': 'aug',
     };
 
     let mappedSuffix = suffixMap[suffix] || suffix;
@@ -291,16 +304,16 @@ const PlayerModal = ({ song, onClose }) => {
     const keyData = guitarDb.chords[mappedKey];
     if (!keyData) return null;
 
-    let chordInfo = keyData.find(c => c.suffix === mappedSuffix);
+    let chordInfo = keyData.find((c) => c.suffix === mappedSuffix);
 
     // Fallback: Si tiene un bajo (ej: m7/G), intentamos mostrar el acorde sin el bajo para que la app no colapse
     if (!chordInfo && mappedSuffix.includes('/')) {
       const fallbackSuffix = mappedSuffix.split('/')[0];
-      chordInfo = keyData.find(c => c.suffix === (suffixMap[fallbackSuffix] || fallbackSuffix));
+      chordInfo = keyData.find((c) => c.suffix === (suffixMap[fallbackSuffix] || fallbackSuffix));
     }
 
     if (!chordInfo && mappedSuffix.startsWith('m')) {
-      chordInfo = keyData.find(c => c.suffix === 'minor');
+      chordInfo = keyData.find((c) => c.suffix === 'minor');
     }
 
     return chordInfo ? chordInfo.positions[0] : null;
@@ -308,7 +321,8 @@ const PlayerModal = ({ song, onClose }) => {
 
   // Lyrics rendering with tooltips
   const renderLyrics = () => {
-    if (!transposedLyrics) return <p className="text-gray-600 italic">No hay letra disponible para esta canción.</p>;
+    if (!transposedLyrics)
+      return <p className="text-gray-600 italic">No hay letra disponible para esta canción.</p>;
 
     const options = {
       replace: (domNode) => {
@@ -332,7 +346,9 @@ const PlayerModal = ({ song, onClose }) => {
                   sideOffset={8}
                 >
                   <div className="flex flex-col items-center">
-                    <p className="text-primary font-black mb-2">{chordName.replace('[', '').replace(']', '')}</p>
+                    <p className="text-primary font-black mb-2">
+                      {chordName.replace('[', '').replace(']', '')}
+                    </p>
                     <div className="w-32 h-40 bg-white rounded-lg p-2 chord-diagram-container">
                       <Chord
                         chord={chordData}
@@ -341,7 +357,7 @@ const PlayerModal = ({ song, onClose }) => {
                           fretsOnChord: 4,
                           name: 'Guitar',
                           keys: [],
-                          tunings: { standard: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'] }
+                          tunings: { standard: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'] },
                         }}
                       />
                     </div>
@@ -351,10 +367,14 @@ const PlayerModal = ({ song, onClose }) => {
             </Popover.Root>
           );
         }
-      }
+      },
     };
 
-    return <div className="lyrics-view" id="lyrics-to-export">{parse(transposedLyrics, options)}</div>;
+    return (
+      <div className="lyrics-view" id="lyrics-to-export">
+        {parse(transposedLyrics, options)}
+      </div>
+    );
   };
 
   const downloadImage = async () => {
@@ -383,9 +403,9 @@ const PlayerModal = ({ song, onClose }) => {
 
           // Asegurar que las secciones y acordes sean visibles
           const chords = clonedElement.querySelectorAll('.chord');
-          chords.forEach(c => c.style.display = showChords ? 'inline-block' : 'none');
+          chords.forEach((c) => (c.style.display = showChords ? 'inline-block' : 'none'));
         }
-      }
+      },
     });
 
     const dataUrl = canvas.toDataURL('image/png');
@@ -410,30 +430,41 @@ const PlayerModal = ({ song, onClose }) => {
   const newKey = originalKeyIndex !== -1 ? NOTES[newKeyIndex] + (isMinor ? 'm' : '') : baseKey;
 
   return (
-    <div className={`fixed inset-0 bg-black md:bg-black/90 md:backdrop-blur-xl z-[150] overflow-hidden animate-fade-in flex items-start md:items-center justify-center p-0 md:p-4 no-print`}>
-      <div 
+    <div
+      className={`fixed inset-0 bg-black md:bg-black/90 md:backdrop-blur-xl z-[150] overflow-hidden animate-fade-in flex items-start md:items-center justify-center p-0 md:p-4 no-print`}
+    >
+      <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
         className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative overflow-y-auto overflow-x-hidden md:overflow-hidden flex flex-col md:flex-row h-full md:h-full md:max-h-[90vh] custom-scrollbar"
       >
-
         <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
         {/* Mobile Dynamic Master Player Container */}
-        <div className={`md:hidden sticky top-0 z-[60] transition-all duration-300 w-full ${isScrolled ? 'bg-surface/95 backdrop-blur-xl border-b border-white/10 py-1 shadow-2xl' : 'bg-[#0a0a0a]'}`}>
-          
+        <div
+          className={`md:hidden sticky top-0 z-[60] transition-all duration-300 w-full ${isScrolled ? 'bg-surface/95 backdrop-blur-xl border-b border-white/10 py-1 shadow-2xl' : 'bg-[#0a0a0a]'}`}
+        >
           {/* 1. Header Navigation (Always visible, small when scrolled) */}
           <div className={`px-4 flex items-center justify-between ${isScrolled ? 'py-1' : 'py-3'}`}>
             <button
               onClick={onClose}
               className={`rounded-full bg-white/5 flex items-center justify-center text-gray-400 active:bg-white/10 transition-all ${isScrolled ? 'w-8 h-8' : 'w-10 h-10'}`}
             >
-              <svg className={isScrolled ? "w-5 h-5" : "w-6 h-6"} viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
+              <svg className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} viewBox="0 0 24 24">
+                <path
+                  fill="currentColor"
+                  d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+                />
+              </svg>
             </button>
-            <div className={`flex flex-col items-end text-right transition-all flex-1 ml-4 overflow-hidden ${isScrolled ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+            <div
+              className={`flex flex-col items-end text-right transition-all flex-1 ml-4 overflow-hidden ${isScrolled ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}
+            >
               <div className="flex items-baseline space-x-2 justify-end mb-0.5">
                 <h3 className="text-[11px] font-black text-white truncate">{song.title}</h3>
-                <p className="text-primary text-[9px] font-bold truncate uppercase">{song.artist}</p>
+                <p className="text-primary text-[9px] font-bold truncate uppercase">
+                  {song.artist}
+                </p>
               </div>
               {/* Subtle Metadata Row - Integrated below titles */}
               <div className="flex items-center space-x-3 opacity-50">
@@ -446,85 +477,122 @@ const PlayerModal = ({ song, onClose }) => {
                   <span className="text-[9px] font-black text-white">{song.bpm || '-'}</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                   <span className="text-[9px] font-mono font-medium text-white">{formatTime(currentTime)} / {player ? formatTime(player.getDuration()) : '-:-'}</span>
+                  <span className="text-[9px] font-mono font-medium text-white">
+                    {formatTime(currentTime)} / {player ? formatTime(player.getDuration()) : '-:-'}
+                  </span>
                 </div>
               </div>
             </div>
             {!isScrolled && (
               <div className="flex flex-col items-end text-right">
-                <h3 className="text-xs font-black text-white/40 uppercase tracking-widest">EN VIVO</h3>
+                <h3 className="text-xs font-black text-white/40 uppercase tracking-widest">
+                  EN VIVO
+                </h3>
               </div>
             )}
-          </div>          {/* 2. THE MASTER PLAYER & TITLE SECTION */}
+          </div>{' '}
+          {/* 2. THE MASTER PLAYER & TITLE SECTION */}
           <div className="flex flex-col">
             {/* Titles - Visible when not scrolled */}
-            <div className={`px-4 transition-all duration-500 overflow-hidden ${isScrolled ? 'max-h-0 opacity-0 mb-0' : 'max-h-20 opacity-100 mb-2'}`}>
+            <div
+              className={`px-4 transition-all duration-500 overflow-hidden ${isScrolled ? 'max-h-0 opacity-0 mb-0' : 'max-h-20 opacity-100 mb-2'}`}
+            >
               <h3 className="text-xl font-black text-white mb-0.5 leading-tight">{song.title}</h3>
-              <p className="text-primary text-xs font-bold uppercase tracking-wider opacity-80">{song.artist}</p>
+              <p className="text-primary text-xs font-bold uppercase tracking-wider opacity-80">
+                {song.artist}
+              </p>
             </div>
 
             {/* Video Container - Smoothly collapses */}
-            <div 
+            <div
               className={`w-full transition-all duration-700 ease-in-out overflow-hidden bg-black shadow-2xl no-print ${isScrolled ? 'max-h-0 opacity-0' : 'max-h-[300px] opacity-100 mb-2'}`}
             >
               <div className="aspect-video w-full relative">
                 <div id="master-youtube-player" className="absolute inset-0 w-full h-full"></div>
               </div>
             </div>
-            
+
             {/* 3. Compact Audio Controls - Slides in when scrolled */}
-            <div 
+            <div
               className={`px-3 overflow-hidden transition-all duration-700 ease-in-out ${isScrolled ? 'max-h-20 opacity-100 pb-2 translate-y-0' : 'max-h-0 opacity-0 pointer-events-none translate-y-4'}`}
             >
               <div className="flex flex-col items-center">
                 <div className="w-full bg-white/5 backdrop-blur-md rounded-2xl py-1 px-6 flex items-center justify-between border border-white/10 shadow-lg">
-                  <button onClick={() => player?.seekTo(0)} className="text-primary/60 active:text-primary transition-colors p-2">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M6,18H8V6H6M9.5,12L18,18V6L9.5,12Z" /></svg>
+                  <button
+                    onClick={() => player?.seekTo(0)}
+                    className="text-primary/60 active:text-primary transition-colors p-2"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M6,18H8V6H6M9.5,12L18,18V6L9.5,12Z" />
+                    </svg>
                   </button>
-                  <button onClick={() => skipTime(-10)} className="text-primary/60 active:text-primary transition-colors p-2">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M11.5,12L20,18V6M11,18V6L2.5,12L11,18Z" /></svg>
+                  <button
+                    onClick={() => skipTime(-10)}
+                    className="text-primary/60 active:text-primary transition-colors p-2"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M11.5,12L20,18V6M11,18V6L2.5,12L11,18Z" />
+                    </svg>
                   </button>
-                  <button 
+                  <button
                     onClick={handlePlayPause}
                     className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20 hover:bg-primary/20 active:scale-95 transition-all"
                   >
                     {playerState === 1 ? (
-                      <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg>
+                      <svg className="w-5 h-5" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" />
+                      </svg>
                     ) : (
-                      <svg className="w-5 h-5 ml-0.5" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
+                      <svg className="w-5 h-5 ml-0.5" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                      </svg>
                     )}
                   </button>
-                  <button onClick={() => skipTime(10)} className="text-primary/60 active:text-primary transition-colors p-2">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M13,12L4.5,6V18M12.5,6V18L21,12L12.5,6Z" /></svg>
+                  <button
+                    onClick={() => skipTime(10)}
+                    className="text-primary/60 active:text-primary transition-colors p-2"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M13,12L4.5,6V18M12.5,6V18L21,12L12.5,6Z" />
+                    </svg>
                   </button>
-                  <button onClick={() => player?.seekTo(player.getDuration() - 1)} className="text-primary/60 active:text-primary transition-colors p-2">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M16,18H18V6H16M6,18L14.5,12L6,6V18Z" /></svg>
+                  <button
+                    onClick={() => player?.seekTo(player.getDuration() - 1)}
+                    className="text-primary/60 active:text-primary transition-colors p-2"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M16,18H18V6H16M6,18L14.5,12L6,6V18Z" />
+                    </svg>
                   </button>
                 </div>
               </div>
             </div>
           </div>
-          
           {/* Ensure a fallback hidden container exists if scrolled and something goes wrong */}
           <div id="youtube-player-hidden-safe" className="hidden"></div>
         </div>
 
         <div className="modal-sidebar w-full md:w-[380px] lg:w-[400px] flex flex-col border-b md:border-b-0 md:border-r border-white/5 relative bg-black/20 shrink-0 no-print">
           {/* Mobile Initial Content is now part of the Sticky Header for sync purposes */}
-          <div className="md:hidden">
-            {/* Space for internal scrolling if needed */}
-          </div>
+          <div className="md:hidden">{/* Space for internal scrolling if needed */}</div>
           <div className="hidden md:block p-6 md:p-8 pb-4">
             <button
               onClick={onClose}
               className="flex items-center space-x-2 text-gray-500 hover:text-white transition-colors mb-4 md:mb-8 group"
             >
               <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10">
-                <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+                  />
+                </svg>
               </div>
               <span className="text-xs font-bold uppercase tracking-widest">Volver</span>
             </button>
-            <h3 className="text-lg md:text-xl font-extrabold text-white mb-1 leading-tight">{song.title}</h3>
+            <h3 className="text-lg md:text-xl font-extrabold text-white mb-1 leading-tight">
+              {song.title}
+            </h3>
             <p className="text-primary text-sm font-bold">{song.artist}</p>
           </div>
 
@@ -532,19 +600,28 @@ const PlayerModal = ({ song, onClose }) => {
             {/* Desktop Video Section */}
             <div className="hidden md:block">
               {videoId ? (
-                <div className="rounded-sub overflow-hidden shadow-2xl bg-black border border-white/5 aspect-video relative group cursor-pointer" onClick={() => setShowVideo(true)}>
+                <div
+                  className="rounded-sub overflow-hidden shadow-2xl bg-black border border-white/5 aspect-video relative group cursor-pointer"
+                  onClick={() => setShowVideo(true)}
+                >
                   {!showVideo ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm group-hover:bg-black/20 transition-all">
                       <img
                         src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
                         className="absolute inset-0 w-full h-full object-cover opacity-60"
                         alt=""
-                        onError={(e) => { e.target.src = `https://img.youtube.com/vi/${videoId}/0.jpg`; }}
+                        onError={(e) => {
+                          e.target.src = `https://img.youtube.com/vi/${videoId}/0.jpg`;
+                        }}
                       />
                       <div className="relative z-10 w-16 h-16 bg-primary text-black rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                        <svg className="w-8 h-8 ml-1" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
+                        <svg className="w-8 h-8 ml-1" viewBox="0 0 24 24">
+                          <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                        </svg>
                       </div>
-                      <span className="relative z-10 mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white bg-black/50 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">Cargar Video</span>
+                      <span className="relative z-10 mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white bg-black/50 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">
+                        Cargar Video
+                      </span>
                     </div>
                   ) : (
                     <iframe
@@ -569,26 +646,40 @@ const PlayerModal = ({ song, onClose }) => {
             {/* 1. Tono Original, Tono Actual */}
             <div className="grid grid-cols-2 gap-2 md:gap-3">
               <div className="bg-white/5 border border-white/5 p-3 md:p-4 rounded-sub flex flex-col items-center justify-center text-center">
-                <p className="text-[8px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Tono Original</p>
+                <p className="text-[8px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                  Tono Original
+                </p>
                 <div className="flex flex-col items-center">
-                  <span className="text-lg md:text-xl font-black text-white leading-tight">{song.originalKey || song.key || '-'}</span>
+                  <span className="text-lg md:text-xl font-black text-white leading-tight">
+                    {song.originalKey || song.key || '-'}
+                  </span>
                   {song.vocalistKey && (
-                    <span className="text-[7px] md:text-[8px] text-primary font-bold uppercase tracking-tighter">Vocalista: {song.vocalistKey}</span>
+                    <span className="text-[7px] md:text-[8px] text-primary font-bold uppercase tracking-tighter">
+                      Vocalista: {song.vocalistKey}
+                    </span>
                   )}
                 </div>
               </div>
               <div className="bg-white/5 border border-white/5 p-3 md:p-4 rounded-sub flex flex-col items-center justify-center text-center">
-                <p className="text-[8px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Tono Actual</p>
+                <p className="text-[8px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                  Tono Actual
+                </p>
                 <div className="flex flex-col items-center">
-                  <span className="text-lg md:text-xl font-black text-primary leading-tight">{newKey}</span>
-                  <span className="text-[8px] md:text-[9px] text-gray-600 font-bold">({semitones >= 0 ? `+${semitones}` : semitones})</span>
+                  <span className="text-lg md:text-xl font-black text-primary leading-tight">
+                    {newKey}
+                  </span>
+                  <span className="text-[8px] md:text-[9px] text-gray-600 font-bold">
+                    ({semitones >= 0 ? `+${semitones}` : semitones})
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* 2. Transpose */}
             <div className="space-y-2 md:space-y-4 pt-4 border-t border-white/5">
-              <p className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-widest text-center">Transponer Vista</p>
+              <p className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-widest text-center">
+                Transponer Vista
+              </p>
 
               <div className="flex flex-col space-y-3">
                 <div className="flex items-center justify-center space-x-3">
@@ -596,7 +687,12 @@ const PlayerModal = ({ song, onClose }) => {
                     onClick={() => handleTranspose(semitones - 1)}
                     className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all active:scale-90"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+                      />
+                    </svg>
                   </button>
                   <div className="relative group flex-1 max-w-[120px]">
                     <select
@@ -604,7 +700,7 @@ const PlayerModal = ({ song, onClose }) => {
                       onChange={(e) => handleTranspose(parseInt(e.target.value))}
                       className="w-full bg-white/5 border border-white/10 text-[11px] font-black rounded-xl px-2 py-2.5 text-white focus:outline-none focus:border-primary/50 cursor-pointer appearance-none text-center hover:bg-white/10 transition-all font-inter"
                     >
-                      {[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].map(s => {
+                      {[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].map((s) => {
                         const idx = (originalKeyIndex + s + 12) % 12;
                         const keyName = NOTES[idx] + (isMinor ? 'm' : '');
                         return (
@@ -619,7 +715,12 @@ const PlayerModal = ({ song, onClose }) => {
                     onClick={() => handleTranspose(semitones + 1)}
                     className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all active:scale-90"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                      />
+                    </svg>
                   </button>
                 </div>
                 <button
@@ -633,32 +734,43 @@ const PlayerModal = ({ song, onClose }) => {
 
             {/* 3. BPM (Original) */}
             <div className="bg-white/5 border border-white/5 p-4 md:p-5 rounded-sub flex flex-col items-center justify-center text-center">
-              <p className="text-[8px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">BPM Original</p>
-              <p className="text-xl md:text-2xl font-black text-white tracking-widest">{song.bpm || '-'}</p>
+              <p className="text-[8px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                BPM Original
+              </p>
+              <p className="text-xl md:text-2xl font-black text-white tracking-widest">
+                {song.bpm || '-'}
+              </p>
             </div>
 
             {/* 4. Modulo de metronomo */}
-            <div className={`relative bg-white/5 border ${isPlaying ? 'border-primary/50 ring-1 ring-primary/20' : 'border-white/5'} p-4 md:p-5 rounded-sub flex flex-col items-center justify-center transition-all overflow-hidden`}>
+            <div
+              className={`relative bg-white/5 border ${isPlaying ? 'border-primary/50 ring-1 ring-primary/20' : 'border-white/5'} p-4 md:p-5 rounded-sub flex flex-col items-center justify-center transition-all overflow-hidden`}
+            >
               {isPlaying && (
                 <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
                   <div
                     className="h-full bg-primary transition-all duration-75"
                     style={{
                       width: `${((currentBeat + 1) / parseInt(timeSignature)) * 100}%`,
-                      opacity: currentBeat === 0 ? 1 : 0.6
+                      opacity: currentBeat === 0 ? 1 : 0.6,
                     }}
                   />
                 </div>
               )}
 
               <div className="w-full flex justify-between items-center mb-3 md:mb-4">
-                <p className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-wider">Metrónomo</p>
+                <p className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                  Metrónomo
+                </p>
                 <div className="flex space-x-1.5 md:space-x-2">
                   {[...Array(parseInt(timeSignature))].map((_, i) => (
                     <div
                       key={i}
-                      className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-150 ${i === currentBeat ? 'bg-primary scale-125 shadow-[0_0_8px_rgba(251,174,0,0.6)]' : 'bg-white/10'
-                        }`}
+                      className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-150 ${
+                        i === currentBeat
+                          ? 'bg-primary scale-125 shadow-[0_0_8px_rgba(251,174,0,0.6)]'
+                          : 'bg-white/10'
+                      }`}
                     />
                   ))}
                 </div>
@@ -666,30 +778,39 @@ const PlayerModal = ({ song, onClose }) => {
 
               <div className="flex items-center space-x-4 md:space-x-6 mb-3 md:mb-4">
                 <button
-                  onClick={() => setBpm(prev => Math.max(30, prev - 1))}
+                  onClick={() => setBpm((prev) => Math.max(30, prev - 1))}
                   className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-90"
                 >
-                  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M19,13H5V11H19V13Z" /></svg>
+                  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19,13H5V11H19V13Z" />
+                  </svg>
                 </button>
                 <div className="flex flex-col items-center">
-                  <span className="text-2xl md:text-4xl font-black text-white tracking-tighter">{bpm}</span>
-                  <span className="text-[7px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest">BPM Ensayo</span>
+                  <span className="text-2xl md:text-4xl font-black text-white tracking-tighter">
+                    {bpm}
+                  </span>
+                  <span className="text-[7px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                    BPM Ensayo
+                  </span>
                 </div>
                 <button
-                  onClick={() => setBpm(prev => Math.min(300, prev + 1))}
+                  onClick={() => setBpm((prev) => Math.min(300, prev + 1))}
                   className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-90"
                 >
-                  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></svg>
+                  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+                  </svg>
                 </button>
               </div>
 
               <div className="w-full grid grid-cols-2 gap-2 mt-1 md:mt-2">
                 <button
                   onClick={toggleMetronome}
-                  className={`py-2.5 md:py-3 rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest transition-all px-3 md:px-4 ${isPlaying
-                    ? 'bg-red-500/10 text-red-500 border border-red-500/20 shadow-inner'
-                    : 'bg-primary text-black hover:bg-primary-hover shadow-lg shadow-primary/20'
-                    }`}
+                  className={`py-2.5 md:py-3 rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest transition-all px-3 md:px-4 ${
+                    isPlaying
+                      ? 'bg-red-500/10 text-red-500 border border-red-500/20 shadow-inner'
+                      : 'bg-primary text-black hover:bg-primary-hover shadow-lg shadow-primary/20'
+                  }`}
                 >
                   {isPlaying ? 'Parar' : 'Iniciar'}
                 </button>
@@ -699,10 +820,18 @@ const PlayerModal = ({ song, onClose }) => {
                     onChange={(e) => setTimeSignature(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 text-[9px] md:text-[11px] font-black rounded-xl px-2 py-2.5 md:py-3 text-white focus:outline-none focus:border-primary/50 cursor-pointer appearance-none text-center hover:bg-white/10 transition-all font-inter"
                   >
-                    <option value="4/4" className="bg-[#1a1a1a]">4/4</option>
-                    <option value="3/4" className="bg-[#1a1a1a]">3/4</option>
-                    <option value="6/8" className="bg-[#1a1a1a]">6/8</option>
-                    <option value="2/4" className="bg-[#1a1a1a]">2/4</option>
+                    <option value="4/4" className="bg-[#1a1a1a]">
+                      4/4
+                    </option>
+                    <option value="3/4" className="bg-[#1a1a1a]">
+                      3/4
+                    </option>
+                    <option value="6/8" className="bg-[#1a1a1a]">
+                      6/8
+                    </option>
+                    <option value="2/4" className="bg-[#1a1a1a]">
+                      2/4
+                    </option>
                   </select>
                 </div>
               </div>
@@ -710,8 +839,12 @@ const PlayerModal = ({ song, onClose }) => {
 
             {song.notes && (
               <div className="bg-primary/5 border border-primary/10 p-5 md:p-6 rounded-sub">
-                <p className="text-[9px] md:text-[10px] font-bold text-primary uppercase tracking-widest mb-2 md:mb-3">Notas del autor</p>
-                <p className="text-xs md:text-sm text-gray-300 leading-relaxed italic">"{song.notes}"</p>
+                <p className="text-[9px] md:text-[10px] font-bold text-primary uppercase tracking-widest mb-2 md:mb-3">
+                  Notas del autor
+                </p>
+                <p className="text-xs md:text-sm text-gray-300 leading-relaxed italic">
+                  "{song.notes}"
+                </p>
               </div>
             )}
           </div>
@@ -722,22 +855,30 @@ const PlayerModal = ({ song, onClose }) => {
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center space-x-3">
                 <img src="/favicon.png" alt="GI Logo" className="w-8 h-8" />
-                <span className="text-xl font-bold tracking-tight text-black">GI <span className="text-black">Setlist</span></span>
+                <span className="text-xl font-bold tracking-tight text-black">
+                  GI <span className="text-black">Setlist</span>
+                </span>
               </div>
               <p className="text-[10px] font-bold text-gray-400">Generado por GI Setlist</p>
             </div>
             <div className="flex justify-between items-end">
               <div>
-                <h1 className="text-4xl font-black text-black uppercase tracking-tight mb-1">{song.title}</h1>
+                <h1 className="text-4xl font-black text-black uppercase tracking-tight mb-1">
+                  {song.title}
+                </h1>
                 <p className="text-xl text-gray-700 font-bold">{song.artist}</p>
               </div>
               <div className="flex space-x-10 text-right">
                 <div className="flex flex-col items-center">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">Tono Actual</p>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">
+                    Tono Actual
+                  </p>
                   <p className="text-3xl font-black text-black">{newKey}</p>
                 </div>
                 <div className="flex flex-col items-center">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">BPM</p>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">
+                    BPM
+                  </p>
                   <p className="text-3xl font-black text-black">{song.bpm || '-'}</p>
                 </div>
               </div>
@@ -745,7 +886,9 @@ const PlayerModal = ({ song, onClose }) => {
           </div>
           <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between md:sticky top-0 bg-surface/80 md:backdrop-blur-md z-10 no-print">
             <div className="flex items-center space-x-3">
-              <h4 className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] md:tracking-[0.3em]">Letra</h4>
+              <h4 className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] md:tracking-[0.3em]">
+                Letra
+              </h4>
               <button
                 onClick={() => setShowChords(!showChords)}
                 className={`px-3 py-1 rounded-full text-[9px] font-bold border transition-all ${showChords ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-white/5 border-white/10 text-gray-400'}`}
@@ -767,13 +910,20 @@ const PlayerModal = ({ song, onClose }) => {
                 className="p-2 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all text-gray-400 hover:text-white"
                 title="Copiar letra limpia"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" /></svg>
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                  />
+                </svg>
               </button>
               <button
                 onClick={downloadImage}
                 className="px-3 md:px-4 py-1.5 md:py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-full border border-primary/20 transition-all text-[8px] md:text-[10px] font-bold uppercase tracking-widest flex items-center space-x-2"
               >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" /></svg>
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                </svg>
                 <span className="hidden sm:inline">Capturar</span>
               </button>
               <button
@@ -784,11 +934,16 @@ const PlayerModal = ({ song, onClose }) => {
               </button>
             </div>
           </div>
-          <div className="flex-1 p-6 md:p-12 overflow-y-visible md:overflow-y-auto overflow-x-hidden custom-scrollbar" id="lyrics-to-export-container">
+          <div
+            className="flex-1 p-6 md:p-12 overflow-y-visible md:overflow-y-auto overflow-x-hidden custom-scrollbar"
+            id="lyrics-to-export-container"
+          >
             {/* Header visible solo para captura/impresión si es necesario */}
             <div className="hidden print:block mb-8">
               <h1 className="text-3xl font-black text-white">{song.title}</h1>
-              <p className="text-primary font-bold">{song.artist} | Tono: {newKey} | BPM: {song.bpm}</p>
+              <p className="text-primary font-bold">
+                {song.artist} | Tono: {newKey} | BPM: {song.bpm}
+              </p>
             </div>
             <div className="rich-text-content text-gray-300 break-words max-w-full">
               {renderLyrics()}

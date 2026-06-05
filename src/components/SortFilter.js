@@ -11,7 +11,7 @@ const SortFilter = ({ onSortChange, compact = false }) => {
     { value: 'artist', label: 'Artista' },
     { value: 'genre', label: 'Género' },
     { value: 'bpm', label: 'BPM' },
-    { value: 'key', label: 'Tono' }
+    { value: 'key', label: 'Tono' },
   ];
 
   useEffect(() => {
@@ -48,27 +48,37 @@ const SortFilter = ({ onSortChange, compact = false }) => {
               viewBox="0 0 20 20"
               fill="currentColor"
             >
-              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
             </svg>
           </>
         ) : (
-          <svg className={`w-5 h-5 ${isOpen ? 'text-primary' : 'text-gray-400'}`} viewBox="0 0 24 24">
+          <svg
+            className={`w-5 h-5 ${isOpen ? 'text-primary' : 'text-gray-400'}`}
+            viewBox="0 0 24 24"
+          >
             <path fill="currentColor" d="M3,13H15V11H3M3,6V8H21V6M3,18H9V16H3V18Z" />
           </svg>
         )}
       </button>
 
       {isOpen && (
-        <div className={`absolute z-[100] ${compact ? 'right-0 w-32' : 'w-full'} mt-2 bg-card border border-white/10 rounded-sub shadow-2xl overflow-hidden translate-y-0 animate-fade-in backdrop-blur-xl`}>
+        <div
+          className={`absolute z-[100] ${compact ? 'right-0 w-32' : 'w-full'} mt-2 bg-card border border-white/10 rounded-sub shadow-2xl overflow-hidden translate-y-0 animate-fade-in backdrop-blur-xl`}
+        >
           <div className="py-1">
             {options.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handleSelect(option)}
-                className={`w-full px-4 py-2.5 text-xs font-medium text-left transition-colors ${selectedOption === option.label
-                  ? 'text-primary bg-primary/10'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
+                className={`w-full px-4 py-2.5 text-xs font-medium text-left transition-colors ${
+                  selectedOption === option.label
+                    ? 'text-primary bg-primary/10'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
               >
                 {option.label}
               </button>
@@ -80,4 +90,4 @@ const SortFilter = ({ onSortChange, compact = false }) => {
   );
 };
 
-export default SortFilter; 
+export default SortFilter;

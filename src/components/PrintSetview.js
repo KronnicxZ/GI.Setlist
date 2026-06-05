@@ -11,7 +11,12 @@ const PrintSetview = ({ setlist, songs }) => {
         <h1 className="text-5xl font-black uppercase tracking-tighter mb-2">{setlist.name}</h1>
         {setlist.date && (
           <p className="text-xl font-bold text-gray-700">
-            {new Date(setlist.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}
+            {new Date(setlist.date).toLocaleDateString('es-ES', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              timeZone: 'UTC',
+            })}
           </p>
         )}
       </div>
@@ -23,7 +28,9 @@ const PrintSetview = ({ setlist, songs }) => {
             <div key={song.id || index} className="break-after-page">
               <div className="flex justify-between items-baseline border-b-2 border-gray-200 pb-4 mb-8">
                 <div>
-                  <h2 className="text-3xl font-black uppercase">{index + 1}. {song.title}</h2>
+                  <h2 className="text-3xl font-black uppercase">
+                    {index + 1}. {song.title}
+                  </h2>
                   <p className="text-lg font-bold text-gray-600">{song.artist}</p>
                 </div>
                 <div className="text-right">
@@ -32,13 +39,15 @@ const PrintSetview = ({ setlist, songs }) => {
                 </div>
               </div>
               <div className="rich-text-content-print text-sm leading-relaxed">
-                {parse(formatted.replace(/\[/g, '<span class="chord-print">[').replace(/\]/g, ']</span>'))}
+                {parse(
+                  formatted.replace(/\[/g, '<span class="chord-print">[').replace(/\]/g, ']</span>')
+                )}
               </div>
             </div>
           );
         })}
       </div>
-      
+
       <style>{`
         @media print {
           .break-after-page { page-break-after: always; }

@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ password }),
       });
 
       const data = await response.json();
@@ -40,11 +40,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('adminToken');
   };
 
-  return (
-    <AuthContext.Provider value={{ isAdmin, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ isAdmin, login, logout }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
@@ -53,4 +49,4 @@ export const useAuth = () => {
     throw new Error('useAuth debe ser usado dentro de un AuthProvider');
   }
   return context;
-}; 
+};

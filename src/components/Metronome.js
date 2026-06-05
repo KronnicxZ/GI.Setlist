@@ -64,11 +64,7 @@ const Metronome = ({ bpm, timeSignature = '4/4' }) => {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 1 }}>
-      <IconButton 
-        onClick={togglePlay}
-        color="primary"
-        size="small"
-      >
+      <IconButton onClick={togglePlay} color="primary" size="small">
         {isPlaying ? <StopIcon /> : <PlayArrowIcon />}
       </IconButton>
 
@@ -90,4 +86,4 @@ const Metronome = ({ bpm, timeSignature = '4/4' }) => {
   );
 };
 
-export default Metronome; 
+export default Metronome;

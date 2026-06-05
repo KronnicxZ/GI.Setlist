@@ -41,25 +41,34 @@ export const useBackup = (apiUrl, setSuccessAlert, setErrorAlert) => {
       const response = await fetch(`${apiUrl}/restore`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify(backupData)
+        body: JSON.stringify(backupData),
       });
 
       if (response.ok) {
-        setSuccessAlert({ isOpen: true, message: 'Base de datos restaurada correctamente. La página se recargará.' });
+        setSuccessAlert({
+          isOpen: true,
+          message: 'Base de datos restaurada correctamente. La página se recargará.',
+        });
         setTimeout(async () => {
           if ('serviceWorker' in navigator && 'caches' in window) {
             const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            await Promise.all(cacheNames.map((name) => caches.delete(name)));
           }
           window.location.reload(true);
         }, 2000);
       } else {
         const errorData = await response.json();
-        setErrorAlert({ isOpen: true, message: `Error al restaurar: ${errorData.error || response.statusText}` });
+        setErrorAlert({
+          isOpen: true,
+          message: `Error al restaurar: ${errorData.error || response.statusText}`,
+        });
       }
     } catch (error) {
       console.error('Error al restaurar:', error);
-      setErrorAlert({ isOpen: true, message: `Error de red o de archivo: ${error.message || 'No se pudo conectar con el servidor'}` });
+      setErrorAlert({
+        isOpen: true,
+        message: `Error de red o de archivo: ${error.message || 'No se pudo conectar con el servidor'}`,
+      });
     } finally {
       if (event && event.target) {
         event.target.value = '';

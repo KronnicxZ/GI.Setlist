@@ -13,7 +13,10 @@ root.render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />} />
-          <Route path="/shared/:id" element={<PublicSetlist apiUrl={process.env.REACT_APP_API_URL || '/api'} />} />
+          <Route
+            path="/shared/:id"
+            element={<PublicSetlist apiUrl={process.env.REACT_APP_API_URL || '/api'} />}
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
@@ -22,10 +25,13 @@ root.render(
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').then(registration => {
-      console.log('SW registrado con éxito: ', registration);
-    }).catch(registrationError => {
-      console.log('SW fallo en registro: ', registrationError);
-    });
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then((registration) => {
+        console.log('SW registrado con éxito: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW fallo en registro: ', registrationError);
+      });
   });
 }
