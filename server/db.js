@@ -165,16 +165,37 @@ async function deleteSetlist(id) {
 }
 
 // ── Backup / Restore ────────────────────────────────────────────────────────
+// Restaura por UPSERT preservando el `id` de cada canción/setlist. Esto es clave:
+// el viejo restore borraba todo y reinsertaba con ids NUEVOS, así que los
+// `song_ids` de los setlists quedaban apuntando a ids inexistentes (setlists
+// vacíos). Al conservar los ids, las referencias canción↔setlist siguen válidas.
+// Además es NO destructivo: una canción agregada después del backup no se borra
+// (más seguro dado que la BD es compartida con LivePads).
 async function replaceAll(songs, setlists) {
-  // Borra todo lo de la librería y reinserta (como el restore de Mongo).
-  await supabase.from('setlists').delete().eq('library_id', LIBRARY_ID);
-  await supabase.from('songs').delete().eq('library_id', LIBRARY_ID);
-  if (songs && songs.length) {
-    const { error } = await supabase.from('songs').insert(songs.map(songToRow));
+  songs = Array.isArray(songs) ? songs : [];
+  setlists = Array.isArray(setlists) ? setlists : [];
+
+  if (songs.length) {
+    const rows = songs.map((s) => {
+      const row = songToRow(s);
+      const id = s._id || s.id;
+      if (id) row.id = id;                 // preservar id → refs intactas
+      if (s.createdAt) row.created_at = s.createdAt;
+      return row;
+    });
+    const { error } = await supabase.from('songs').upsert(rows, { onConflict: 'id' });
     if (error) throw new Error(error.message);
   }
-  if (setlists && setlists.length) {
-    const { error } = await supabase.from('setlists').insert(setlists.map(setlistToRow));
+
+  if (setlists.length) {
+    const rows = setlists.map((s) => {
+      const row = setlistToRow(s);
+      const id = s._id || s.id;
+      if (id) row.id = id;
+      if (s.createdAt) row.created_at = s.createdAt;
+      return row;
+    });
+    const { error } = await supabase.from('setlists').upsert(rows, { onConflict: 'id' });
     if (error) throw new Error(error.message);
   }
 }

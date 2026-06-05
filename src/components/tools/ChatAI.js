@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { authHeaders } from '../../utils/api';
 
 const ChatAI = ({ isPopup = false }) => {
   const [messages, setMessages] = useState([
@@ -39,7 +40,7 @@ const ChatAI = ({ isPopup = false }) => {
       const url = `${API_URL}/ai/chat`;
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })) })
       });
 

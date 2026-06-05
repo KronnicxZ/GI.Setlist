@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as Tone from 'tone';
 import { extractYoutubeVideoId, getVideoDetails } from '../../utils/youtube';
+import { authHeaders } from '../../utils/api';
 
 const TIME_SIGNATURES = [
   { label: '2/4', beats: 2 },
@@ -56,7 +57,7 @@ const Metronome = () => {
           
           const res = await fetch(aiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify({ messages })
           });
           
