@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { extractYoutubeVideoId, getVideoDetails, getVideoDuration } from '../utils/youtube';
+import { authHeaders } from '../utils/api';
 import { autoBracketChords, formatLyricsForQuill } from '../utils/chordTransposer';
 
 const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
@@ -313,7 +314,7 @@ const SongForm = ({ onSubmit, onCancel, initialData = {} }) => {
                 
                 const res = await fetch(url, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: authHeaders(),
                   body: JSON.stringify({ title: formData.title, artist: formData.artist })
                 });
                 

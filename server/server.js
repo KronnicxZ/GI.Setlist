@@ -2,19 +2,54 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const crypto = require('crypto');
 
 const db = require('./db');
 
 const app = express();
-app.use(cors());
+
+// ── CORS restringido ──────────────────────────────────────────────────────
+// Frontend y backend van en el MISMO origen (deploy unificado en Vercel), así
+// que las peticiones de la app son same-origin y no dependen de CORS. Esto solo
+// limita quién puede llamar la API desde OTRO sitio en un navegador. Configurable
+// con ALLOWED_ORIGINS (lista separada por comas).
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://gi-setlist.vercel.app')
+    .split(',').map((s) => s.trim()).filter(Boolean);
+app.use(cors({
+    origin(origin, cb) {
+        // Sin origin = same-origin / curl / apps nativas → permitido.
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+        return cb(null, false);
+    },
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Log de peticiones (simplificado)
-app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`);
+// Log de peticiones — solo en desarrollo (en prod ensucia los logs de Vercel).
+if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        console.log(`${req.method} ${req.url}`);
+        next();
+    });
+}
+
+// ── Auth de admin ───────────────────────────────────────────────────────────
+// Token determinístico derivado de ADMIN_PASSWORD: estable entre invocaciones
+// serverless (no requiere una env var nueva) y nunca expone la contraseña. El
+// frontend lo recibe al iniciar sesión y lo envía en el header `x-admin-token`.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+function adminToken() {
+    if (!ADMIN_PASSWORD) return null;
+    return crypto.createHash('sha256').update(`${ADMIN_PASSWORD}:gi-setlist-admin-v1`).digest('hex');
+}
+// Middleware: protege las rutas de escritura / costosas. Falla cerrado si no hay
+// ADMIN_PASSWORD configurada en el servidor.
+function requireAdmin(req, res, next) {
+    const expected = adminToken();
+    if (!expected) return res.status(503).json({ error: 'Admin no configurado en el servidor (falta ADMIN_PASSWORD)' });
+    if (req.header('x-admin-token') !== expected) return res.status(401).json({ error: 'No autorizado' });
     next();
-});
+}
 
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'production') {
@@ -26,9 +61,13 @@ module.exports = app;
 // ── Auth ────────────────────────────────────────────────────────────────────
 app.post('/api/auth/login', (req, res) => {
     const { password } = req.body;
-    const adminPassword = process.env.ADMIN_PASSWORD || 'H8e5n14r19y251';
-    if (password === adminPassword) res.json({ success: true, isAdmin: true });
-    else res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
+    if (!ADMIN_PASSWORD) {
+        return res.status(503).json({ success: false, message: 'Admin no configurado en el servidor' });
+    }
+    if (password === ADMIN_PASSWORD) {
+        return res.json({ success: true, isAdmin: true, token: adminToken() });
+    }
+    return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
 });
 
 // ── YouTube Proxy ─────────────────────────────────────────────────────────
@@ -52,7 +91,7 @@ app.get('/api/youtube/details', async (req, res) => {
 });
 
 // ── IA: generar acordes ─────────────────────────────────────────────────────
-app.post('/api/ai/generate-chords', async (req, res) => {
+app.post('/api/ai/generate-chords', requireAdmin, async (req, res) => {
     const { title, artist } = req.body;
     if (!title || !artist) return res.status(400).json({ error: 'Title and artist are required' });
 
@@ -120,15 +159,15 @@ app.get('/api/songs/:id', async (req, res) => {
         res.json(song);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.post('/api/songs', async (req, res) => {
+app.post('/api/songs', requireAdmin, async (req, res) => {
     try { res.status(201).json(await db.createSong(req.body)); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.put('/api/songs/:id', async (req, res) => {
+app.put('/api/songs/:id', requireAdmin, async (req, res) => {
     try { res.json(await db.updateSong(req.params.id, req.body)); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.delete('/api/songs/:id', async (req, res) => {
+app.delete('/api/songs/:id', requireAdmin, async (req, res) => {
     try { await db.deleteSong(req.params.id); res.json({ message: 'Song deleted' }); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -138,15 +177,15 @@ app.get('/api/setlists', async (req, res) => {
     try { res.json(await db.listSetlists()); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.post('/api/setlists', async (req, res) => {
+app.post('/api/setlists', requireAdmin, async (req, res) => {
     try { res.status(201).json(await db.createSetlist(req.body)); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.put('/api/setlists/:id', async (req, res) => {
+app.put('/api/setlists/:id', requireAdmin, async (req, res) => {
     try { res.json(await db.updateSetlist(req.params.id, req.body)); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.delete('/api/setlists/:id', async (req, res) => {
+app.delete('/api/setlists/:id', requireAdmin, async (req, res) => {
     try { await db.deleteSetlist(req.params.id); res.json({ message: 'Setlist deleted' }); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -161,14 +200,14 @@ app.get('/api/public/setlists/:id', async (req, res) => {
 });
 
 // ── Backup / Restore ────────────────────────────────────────────────────────
-app.get('/api/backup', async (req, res) => {
+app.get('/api/backup', requireAdmin, async (req, res) => {
     try {
         const songs = await db.listSongs();
         const setlists = await db.listSetlists();
         res.json({ version: '1.0', timestamp: new Date().toISOString(), data: { songs, setlists } });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.post('/api/restore', async (req, res) => {
+app.post('/api/restore', requireAdmin, async (req, res) => {
     try {
         const { data } = req.body;
         if (!data || !data.songs || !data.setlists) return res.status(400).json({ error: 'Formato de backup inválido' });
@@ -178,7 +217,7 @@ app.post('/api/restore', async (req, res) => {
 });
 
 // ── IA: chat asistente ──────────────────────────────────────────────────────
-app.post('/api/ai/chat', async (req, res) => {
+app.post('/api/ai/chat', requireAdmin, async (req, res) => {
     const { messages } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Messages array is required' });
     const GROQ_API_KEY = process.env.GROQ_API_KEY;

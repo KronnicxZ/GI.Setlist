@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { authHeaders, adminAuthHeaders } from '../utils/api';
 
 export const useBackup = (apiUrl, setSuccessAlert, setErrorAlert) => {
   const [restoreAlert, setRestoreAlert] = useState({ isOpen: false, file: null, event: null });
 
   const handleBackup = async () => {
     try {
-      const response = await fetch(`${apiUrl}/backup`);
+      const response = await fetch(`${apiUrl}/backup`, { headers: adminAuthHeaders() });
       const backupData = await response.json();
 
       const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
@@ -39,7 +40,7 @@ export const useBackup = (apiUrl, setSuccessAlert, setErrorAlert) => {
 
       const response = await fetch(`${apiUrl}/restore`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(backupData)
       });
 

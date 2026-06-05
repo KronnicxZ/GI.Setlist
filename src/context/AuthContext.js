@@ -4,8 +4,9 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(() => {
-    // Verificar si hay un token de admin guardado
-    return localStorage.getItem('isAdmin') === 'true';
+    // Admin solo si hay sesión Y token (el backend exige el token en escrituras).
+    // Así, tras el deploy de auth, un admin viejo sin token re-inicia sesión.
+    return localStorage.getItem('isAdmin') === 'true' && !!localStorage.getItem('adminToken');
   });
 
   const login = async (password) => {
@@ -22,6 +23,8 @@ export const AuthProvider = ({ children }) => {
       if (data.success) {
         setIsAdmin(true);
         localStorage.setItem('isAdmin', 'true');
+        // Guardar el token que el backend exige en las peticiones de escritura.
+        if (data.token) localStorage.setItem('adminToken', data.token);
         return true;
       }
       return false;
@@ -34,6 +37,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setIsAdmin(false);
     localStorage.removeItem('isAdmin');
+    localStorage.removeItem('adminToken');
   };
 
   return (

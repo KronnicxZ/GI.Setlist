@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { authHeaders, adminAuthHeaders } from '../utils/api';
 
 export const useData = (apiUrl) => {
   const [songs, setSongs] = useState([]);
@@ -42,7 +43,7 @@ export const useData = (apiUrl) => {
     const method = editingId ? 'PUT' : 'POST';
     const response = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(songData)
     });
     const savedSong = await response.json();
@@ -59,7 +60,7 @@ export const useData = (apiUrl) => {
   const deleteSong = async (idOrIds) => {
     const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
     for (const id of ids) {
-      await fetch(`${apiUrl}/songs/${id}`, { method: 'DELETE' });
+      await fetch(`${apiUrl}/songs/${id}`, { method: 'DELETE', headers: adminAuthHeaders() });
     }
     setSongs(prev => prev.filter(s => !ids.includes(s.id)));
   };
@@ -69,7 +70,7 @@ export const useData = (apiUrl) => {
     const method = editingId ? 'PUT' : 'POST';
     const response = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(setlistData)
     });
     const savedSetlist = await response.json();
@@ -84,7 +85,7 @@ export const useData = (apiUrl) => {
   };
 
   const deleteSetlist = async (id) => {
-    await fetch(`${apiUrl}/setlists/${id}`, { method: 'DELETE' });
+    await fetch(`${apiUrl}/setlists/${id}`, { method: 'DELETE', headers: adminAuthHeaders() });
     setSetlists(prev => prev.filter(s => s.id !== id));
   };
 
@@ -100,7 +101,7 @@ export const useData = (apiUrl) => {
     const allNewSongIds = [...existingIds, ...uniqueNewIds];
     const response = await fetch(`${apiUrl}/setlists/${setlistId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ songs: allNewSongIds })
     });
 
@@ -124,7 +125,7 @@ export const useData = (apiUrl) => {
 
     const response = await fetch(`${apiUrl}/setlists/${setlistId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ songs: remainingIds })
     });
 
