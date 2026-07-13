@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import parse from 'html-react-parser';
 import { transposeText, formatLyricsForDisplay, NOTES } from '../utils/chordTransposer';
+import { cleanLyricsForProjection } from '../utils/projection';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Vista CANTANTE — letra a pantalla completa estilo LivePads, ultra ligera:
@@ -36,7 +37,25 @@ const fmtTime = (s) => {
 
 const SingerView = ({ song, videoId, onClose }) => {
   const [semitones, setSemitones] = useState(0);
-  const [showChords, setShowChords] = useState(true);
+  // Por defecto SOLO LETRA (lo que un cantante quiere leer); la elección se
+  // recuerda para el que sí trabaja con acordes.
+  const [showChords, setShowChords] = useState(() => {
+    try {
+      return localStorage.getItem('gis.singer.chords') === '1';
+    } catch (e) {
+      return false;
+    }
+  });
+  const toggleChords = () => {
+    setShowChords((prev) => {
+      try {
+        localStorage.setItem('gis.singer.chords', prev ? '0' : '1');
+      } catch (e) {
+        /* sin storage */
+      }
+      return !prev;
+    });
+  };
   const [lyricSize, setLyricSize] = useState(readSize);
   const [showVideo, setShowVideo] = useState(false);
 
@@ -125,13 +144,19 @@ const SingerView = ({ song, videoId, onClose }) => {
     return NOTES[(idx + semitones + 120) % 12] + (isMinor ? 'm' : '');
   }, [song.key, song.originalKey, semitones]);
 
-  // Letra transpuesta + formateada, memoizada (no se re-parsea por los ticks)
+  // Letra memoizada (no se re-parsea por los ticks del reproductor).
+  // CON acordes: transpone y muestra el cifrado encima de cada línea.
+  // SOLO LETRA: pasa por el limpiador de proyección — las líneas de cifrado
+  // desaparecen POR COMPLETO (no dejan huecos) y quedan las etiquetas [CORO]
+  // como píldoras; texto compacto y fácil de leer.
   const renderedLyrics = useMemo(() => {
     if (!song.lyrics)
       return <p className="text-gray-600 italic">No hay letra disponible para esta canción.</p>;
-    const formatted = formatLyricsForDisplay(transposeText(song.lyrics, semitones));
-    return parse(formatted);
-  }, [song.lyrics, semitones]);
+    const source = showChords
+      ? transposeText(song.lyrics, semitones)
+      : cleanLyricsForProjection(song.lyrics, { keepSections: true });
+    return parse(formatLyricsForDisplay(source));
+  }, [song.lyrics, semitones, showChords]);
 
   // ── YouTube: player oculto controlado por API ──
   useEffect(() => {
@@ -330,16 +355,41 @@ const SingerView = ({ song, videoId, onClose }) => {
 
           {/* Acordes on/off */}
           <button
-            onClick={() => setShowChords(!showChords)}
+            onClick={toggleChords}
             className={`shrink-0 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-colors ${showChords ? 'bg-primary/10 border-primary/40 text-primary' : 'bg-white/5 border-white/10 text-gray-400'}`}
           >
             {showChords ? 'Con acordes' : 'Solo letra'}
           </button>
         </div>
+      </header>
 
-        {/* ── Reproductor tipo MP3 (YouTube oculto) ── */}
-        {videoId && (
-          <div className="px-3 pb-2">
+      {/* ── Letra ── */}
+      <main className="flex-1 min-h-0 overflow-y-auto px-5 md:px-10 py-6 custom-scrollbar">
+        <div
+          className={`lyrics-view max-w-3xl mx-auto text-gray-200 ${showChords ? '' : 'no-chords'}`}
+          style={{ fontSize: `${lyricSize}px` }}
+        >
+          {renderedLyrics}
+        </div>
+      </main>
+
+      {/* ── Reproductor tipo MP3 ABAJO (como un player de música) ── */}
+      {videoId && (
+        <footer
+          className="shrink-0 border-t border-white/5 bg-main/95 px-3 pt-2"
+          style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          {/* Video expandible ENCIMA de la barra (opcional) */}
+          <div
+            className={
+              showVideo
+                ? 'mb-2 aspect-video w-full max-w-xl mx-auto rounded-lg overflow-hidden bg-black'
+                : 'absolute w-px h-px overflow-hidden opacity-0 pointer-events-none'
+            }
+          >
+            <div id="singer-audio-player" className="w-full h-full" />
+          </div>
+          <div className="max-w-3xl mx-auto">
             <div className="flex items-center gap-3 bg-white/[0.05] border border-white/10 rounded-lg px-3 py-2">
               <img
                 src={`https://img.youtube.com/vi/${videoId}/default.jpg`}
@@ -406,33 +456,9 @@ const SingerView = ({ song, videoId, onClose }) => {
                 </svg>
               </button>
             </div>
-            {/* El iframe SIEMPRE está montado (controla el audio); visible solo si
-                el usuario expande el video, si no queda en 1px (sin coste visual). */}
-            <div
-              className={
-                showVideo
-                  ? 'mt-2 aspect-video w-full max-w-xl mx-auto rounded-lg overflow-hidden bg-black'
-                  : 'absolute w-px h-px overflow-hidden opacity-0 pointer-events-none'
-              }
-            >
-              <div id="singer-audio-player" className="w-full h-full" />
-            </div>
           </div>
-        )}
-      </header>
-
-      {/* ── Letra ── */}
-      <main
-        className="flex-1 overflow-y-auto px-5 md:px-10 py-6 custom-scrollbar"
-        style={{ paddingBottom: 'calc(3rem + env(safe-area-inset-bottom, 0px))' }}
-      >
-        <div
-          className={`lyrics-view max-w-3xl mx-auto text-gray-200 ${showChords ? '' : 'no-chords'}`}
-          style={{ fontSize: `${lyricSize}px` }}
-        >
-          {renderedLyrics}
-        </div>
-      </main>
+        </footer>
+      )}
     </div>
   );
 };

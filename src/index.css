@@ -210,6 +210,12 @@ input[type='number'] {
   display: none;
 }
 
+/* Solo letra: el interlineado grande (2.2) existe para dejar sitio a los
+   acordes encima de cada línea; sin acordes se compacta a lectura normal. */
+.lyrics-view.no-chords {
+  line-height: 1.65;
+}
+
 .lyrics-view .chord-wrapper {
   display: inline-flex;
   flex-direction: column-reverse;
