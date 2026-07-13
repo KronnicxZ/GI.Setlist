@@ -2,6 +2,7 @@ import React from 'react';
 import { showToast } from '../utils/toast';
 import SearchBar from './SearchBar';
 import SortFilter from './SortFilter';
+import { TeamLinksPills } from './TeamLinks';
 
 const Header = ({
   selectedSetlist,
@@ -123,6 +124,10 @@ const Header = ({
 
       {/* Mobile Header */}
       <div className="md:hidden sticky top-0 z-50 bg-main/80 backdrop-blur-xl border-b border-white/5 pt-4 pb-2 px-4">
+        {/* Acceso rápido a las vistas del equipo (siempre a la mano) */}
+        <div className="mb-3">
+          <TeamLinksPills />
+        </div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             <div
