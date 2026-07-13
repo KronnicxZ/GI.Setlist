@@ -60,6 +60,10 @@ const SingerView = ({ song, videoId, onClose, playlist = [], onNavigate }) => {
   };
   const [lyricSize, setLyricSize] = useState(readSize);
   const [showVideo, setShowVideo] = useState(false);
+  // Controles CONTRAÍDOS por defecto (prioridad total a la letra): un toque en
+  // ⚙ (arriba) o en ⌃ (abajo) los expande.
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const [playerOpen, setPlayerOpen] = useState(false);
 
   // ── Posición en el setlist (navegación ◀ ▶ sin salir de la letra) ──
   const songId = (song.id || song._id)?.toString();
@@ -360,7 +364,8 @@ const SingerView = ({ song, videoId, onClose, playlist = [], onNavigate }) => {
         className="shrink-0 border-b border-white/5 bg-main/95"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="flex items-center flex-wrap gap-2 px-3 py-2">
+        {/* Fila 1 — SIEMPRE visible y mínima: volver, título, tono, ⚙ */}
+        <div className="flex items-center gap-2 px-3 py-2">
           <button
             onClick={onClose}
             className="shrink-0 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-300 active:bg-white/10"
@@ -378,10 +383,32 @@ const SingerView = ({ song, videoId, onClose, playlist = [], onNavigate }) => {
             <p className="text-[11px] text-gray-500 truncate">{song.artist}</p>
           </div>
 
-          {/* Tono actual + tono del VOCALISTA (dato clave para quien canta) */}
+          {/* Tono actual (dato vital: siempre a la vista) */}
           <span className="shrink-0 px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-primary font-black text-sm">
             {currentKey}
           </span>
+
+          {/* ⚙ expandir/contraer los demás controles */}
+          <button
+            onClick={() => setControlsOpen((v) => !v)}
+            className={`shrink-0 w-10 h-10 rounded-lg border flex items-center justify-center transition-colors ${controlsOpen ? 'bg-primary text-black border-primary' : 'bg-white/5 border-white/10 text-gray-300'}`}
+            title="Controles (tono, tamaño, metrónomo…)"
+            aria-label="Mostrar controles"
+            aria-expanded={controlsOpen}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M3,17V19H9V17H3M3,5V7H13V5H3M13,21V19H21V17H13V15H11V21H13M7,9V11H3V13H7V15H9V9H7M21,13V11H11V13H21M15,9H17V7H21V5H17V3H15V9Z"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Fila 2 — controles, CONTRAÍDA por defecto */}
+        <div
+          className={`items-center flex-wrap gap-2 px-3 pb-2 ${controlsOpen ? 'flex' : 'hidden'}`}
+        >
           {vocalistKey && (
             <span
               className="shrink-0 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[12px] font-bold text-gray-200"
@@ -507,6 +534,72 @@ const SingerView = ({ song, videoId, onClose, playlist = [], onNavigate }) => {
         )}
 
         <div className="max-w-3xl mx-auto space-y-2">
+          {/* Fila compacta SIEMPRE visible: play, ◀ 3/103 ▶ y expandir */}
+          <div className="flex items-center gap-2">
+            {videoId && (
+              <>
+                <button
+                  onClick={togglePlay}
+                  disabled={!playerReady}
+                  className="shrink-0 w-10 h-10 rounded-full bg-primary text-black flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
+                  aria-label={playing ? 'Pausar' : 'Reproducir'}
+                >
+                  {playing ? (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                    </svg>
+                  )}
+                </button>
+                <span className="shrink-0 text-[10px] font-mono text-gray-400 tabular-nums">
+                  {fmtTime(cur)}/{fmtTime(dur)}
+                </span>
+              </>
+            )}
+            {playlist.length > 1 && idx >= 0 && (
+              <div className="flex items-center gap-1 mx-auto">
+                <button
+                  onClick={() => navigateTo(prevSong)}
+                  disabled={!prevSong}
+                  className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-primary font-black disabled:opacity-30 active:bg-white/10"
+                  aria-label="Canción anterior"
+                >
+                  ◀
+                </button>
+                <span className="px-1.5 text-[11px] font-mono font-bold text-gray-400">
+                  {idx + 1}/{playlist.length}
+                </span>
+                <button
+                  onClick={() => navigateTo(nextSong)}
+                  disabled={!nextSong}
+                  className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-primary font-black disabled:opacity-30 active:bg-white/10"
+                  aria-label="Canción siguiente"
+                >
+                  ▶
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setPlayerOpen((v) => !v)}
+              className={`shrink-0 ml-auto w-10 h-10 rounded-lg border flex items-center justify-center transition-colors ${playerOpen ? 'bg-primary text-black border-primary' : 'bg-white/5 border-white/10 text-gray-300'}`}
+              title="Reproductor completo"
+              aria-label="Expandir reproductor"
+              aria-expanded={playerOpen}
+            >
+              <svg
+                className={`w-5 h-5 transition-transform ${playerOpen ? 'rotate-180' : ''}`}
+                viewBox="0 0 24 24"
+              >
+                <path fill="currentColor" d="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z" />
+              </svg>
+            </button>
+          </div>
+
+          {playerOpen && (
+            <>
           {/* Navegación por el setlist sin salir de la letra */}
           {playlist.length > 1 && idx >= 0 && (
             <div className="flex items-center gap-2">
@@ -614,6 +707,8 @@ const SingerView = ({ song, videoId, onClose, playlist = [], onNavigate }) => {
                 </svg>
               </button>
             </div>
+          )}
+            </>
           )}
         </div>
       </footer>
