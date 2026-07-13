@@ -20,6 +20,34 @@ const norm = (t) =>
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '');
 
+// Renderiza la letra limpia de forma VISTOSA: las etiquetas de sección
+// ("[CORO]", "[VERSO 1]") como píldoras de acento; el resto como texto legible.
+// OJO: esto es solo la presentación — lo que se COPIA sigue siendo el texto
+// plano `clean` (con los corchetes), que es lo que Holyrics necesita.
+function PrettyLyrics({ clean }) {
+  const lines = clean.split('\n');
+  return (
+    <div className="prod-lyrics">
+      {lines.map((line, i) => {
+        const t = line.trim();
+        if (/^\[[^\]]+\]$/.test(t)) {
+          return (
+            <div key={i} className="prod-label-row">
+              <span className="prod-label">{t.replace(/[[\]]/g, '')}</span>
+            </div>
+          );
+        }
+        if (t === '') return <div key={i} className="prod-gap" />;
+        return (
+          <p key={i} className="prod-line">
+            {line}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 const ProductionApp = () => {
   const API_URL = process.env.REACT_APP_API_URL || '/api';
   const { songs, setlists, loading } = useTeamData(API_URL);
@@ -44,14 +72,9 @@ const ProductionApp = () => {
     document.title = 'GI Producción — Letras';
   }, []);
 
-  const [openIds, setOpenIds] = useState(() => new Set()); // filas expandidas
-  const toggleOpen = (id) =>
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  // Acordeón de UNA sola abierta: abrir otra cierra la anterior.
+  const [openId, setOpenId] = useState(null);
+  const toggleOpen = (id) => setOpenId((prev) => (prev === id ? null : id));
 
   const orderedSetlists = useMemo(() => orderSetlists(setlists), [setlists]);
   const activeSetlist = setlists.find((s) => s.id === setlistId) || null;
@@ -103,7 +126,7 @@ const ProductionApp = () => {
         className="shrink-0 z-40 bg-main/95 border-b border-white/5 px-4 pb-3"
         style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
       >
-        <div className="flex items-center justify-between mb-3 max-w-3xl mx-auto w-full">
+        <div className="flex items-center justify-between mb-3 max-w-4xl mx-auto w-full">
           <div className="flex items-center space-x-2">
             <img src="/gi-logo.png" alt="" className="w-8 h-8 rounded-lg" />
             <div>
@@ -123,7 +146,7 @@ const ProductionApp = () => {
           </button>
         </div>
 
-        <div className="max-w-3xl mx-auto w-full space-y-2.5">
+        <div className="max-w-4xl mx-auto w-full space-y-2.5">
           <input
             type="search"
             placeholder="Buscar canción o artista…"
@@ -176,7 +199,7 @@ const ProductionApp = () => {
         className="flex-1 min-h-0 overflow-y-auto custom-scrollbar w-full px-4 py-4"
         style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
       >
-        <div className="max-w-3xl mx-auto space-y-3">
+        <div className="max-w-4xl mx-auto space-y-3">
           {loading ? (
             <div className="space-y-3" aria-hidden="true">
               {[...Array(5)].map((_, i) => (
@@ -197,7 +220,7 @@ const ProductionApp = () => {
             visibleSongs.map((song, idx) => {
               const id = song.id || song._id;
               const clean = cleanLyricsForProjection(song.lyrics, { keepSections });
-              const isOpen = openIds.has(id);
+              const isOpen = openId === id;
               return (
                 <div
                   key={id}
@@ -252,9 +275,9 @@ const ProductionApp = () => {
                   {/* Letra SOLO cuando se expande la fila */}
                   {isOpen &&
                     (clean ? (
-                      <pre className="whitespace-pre-wrap text-[14px] leading-relaxed text-gray-300 font-sans px-4 pb-4 border-t border-white/5 pt-3">
-                        {clean}
-                      </pre>
+                      <div className="px-4 pb-4 border-t border-white/5 pt-3">
+                        <PrettyLyrics clean={clean} />
+                      </div>
                     ) : (
                       <p className="px-4 py-4 text-sm text-gray-600 italic border-t border-white/5">
                         Sin letra cargada en LivePads.
