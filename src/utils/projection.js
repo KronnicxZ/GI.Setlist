@@ -178,6 +178,28 @@ export function cleanLyricsForProjection(lyrics, opts = {}) {
     .trim();
 }
 
+/**
+ * Divide la letra LIMPIA en "diapositivas" tal como las cortará Holyrics
+ * (bloques separados por línea en blanco). Cada slide: { label, lines } —
+ * label si el bloque empieza con una etiqueta [CORO]/[VERSO].
+ */
+export function splitIntoSlides(cleanText) {
+  if (!cleanText) return [];
+  return cleanText
+    .split(/\n{2,}/)
+    .map((block) => {
+      const lines = block.split('\n').filter((l) => l.trim() !== '');
+      if (!lines.length) return null;
+      let label = null;
+      if (/^\[[^\]]+\]$/.test(lines[0].trim())) {
+        label = lines[0].trim().replace(/[[\]]/g, '');
+        lines.shift();
+      }
+      return { label, lines };
+    })
+    .filter((s) => s && (s.lines.length || s.label));
+}
+
 /** Copia texto al portapapeles con fallback para contextos sin Clipboard API. */
 export async function copyText(text) {
   try {
