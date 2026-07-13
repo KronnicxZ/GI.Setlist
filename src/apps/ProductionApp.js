@@ -84,9 +84,13 @@ const ProductionApp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-main text-white flex flex-col">
+    // App-shell con scroll PROPIO (html/body llevan overflow hidden global).
+    <div
+      className="bg-main text-white flex flex-col overflow-hidden h-screen"
+      style={{ height: '100dvh' }}
+    >
       <header
-        className="sticky top-0 z-40 bg-main/95 backdrop-blur-md border-b border-white/5 px-4 pb-3"
+        className="shrink-0 z-40 bg-main/95 border-b border-white/5 px-4 pb-3"
         style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
       >
         <div className="flex items-center justify-between mb-3 max-w-3xl mx-auto w-full">
@@ -162,9 +166,10 @@ const ProductionApp = () => {
       </header>
 
       <main
-        className="flex-1 w-full max-w-3xl mx-auto px-4 py-4 space-y-2"
+        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar w-full px-4 py-4"
         style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
       >
+        <div className="max-w-3xl mx-auto space-y-2">
         {loading ? (
           <div className="flex flex-col items-center py-24 space-y-4">
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -224,6 +229,7 @@ const ProductionApp = () => {
             );
           })
         )}
+        </div>
       </main>
     </div>
   );
