@@ -262,6 +262,46 @@ input[type='number'] {
   margin-top: 1.5em;
 }
 
+/* ── Producción: letra vistosa con etiquetas de sección como píldoras ── */
+.prod-lyrics {
+  font-size: 15px;
+  color: #d4d4d4;
+}
+@media (min-width: 768px) {
+  .prod-lyrics {
+    font-size: 16px;
+  }
+}
+.prod-lyrics .prod-line {
+  margin: 0;
+  line-height: 1.6;
+}
+/* Separación entre bloques (línea en blanco del original = corte de diapositiva) */
+.prod-lyrics .prod-gap {
+  height: 0.9em;
+}
+.prod-lyrics .prod-label-row {
+  margin: 1.1em 0 0.5em;
+}
+.prod-lyrics .prod-label-row:first-child {
+  margin-top: 0;
+}
+/* Píldora de acento (mismo lenguaje visual que LivePads/Cantantes) */
+.prod-lyrics .prod-label {
+  display: inline-flex;
+  align-items: center;
+  background: var(--primary);
+  color: #0a0a0a;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72em;
+  line-height: 1;
+  padding: 0.42em 0.85em;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(251, 174, 0, 0.18);
+}
+
 /* Tooltip Animations */
 .animate-in {
   animation-duration: 200ms;
