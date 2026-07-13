@@ -1,5 +1,6 @@
 import React from 'react';
 import BibleVerse from './BibleVerse';
+import { TeamLinksSidebar } from './TeamLinks';
 
 const Sidebar = ({
   isSidebarCollapsed,
@@ -265,6 +266,15 @@ const Sidebar = ({
                   {!isSidebarCollapsed && <span className="font-medium">Herramientas</span>}
                 </button>
               </div>
+            </div>
+
+            <div>
+              {!isSidebarCollapsed && (
+                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4 px-4 mt-6">
+                  Vistas del equipo
+                </h2>
+              )}
+              <TeamLinksSidebar collapsed={isSidebarCollapsed} />
             </div>
           </nav>
 
