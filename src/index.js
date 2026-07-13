@@ -1,13 +1,14 @@
 import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
-import PublicSetlist from './components/PublicSetlist';
 import { AuthProvider } from './context/AuthContext';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-// Vistas dedicadas (subdominios / rutas): lazy para que la app principal no
-// cargue su código y viceversa.
+// TODAS las vistas van lazy: cada audiencia descarga SOLO su app. Un cantante
+// que abre cantantes.* no paga el código del gestor completo (y viceversa) —
+// clave para que las vistas del equipo abran rápido en el móvil.
+const App = lazy(() => import('./App'));
+const PublicSetlist = lazy(() => import('./components/PublicSetlist'));
 const SingersApp = lazy(() => import('./apps/SingersApp'));
 const ProductionApp = lazy(() => import('./apps/ProductionApp'));
 

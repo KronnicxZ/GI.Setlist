@@ -57,6 +57,51 @@ const SingerView = ({ song, videoId, onClose }) => {
     document.title = `${song.title} — GI Cantantes`;
   }, [song.title]);
 
+  // Pantalla SIEMPRE encendida mientras la letra está abierta (Wake Lock):
+  // en escenario el teléfono no se puede apagar a mitad de canción. Se
+  // re-solicita al volver a la pestaña (el lock se libera al ocultarla).
+  useEffect(() => {
+    let lock = null;
+    const request = async () => {
+      try {
+        if (navigator.wakeLock) lock = await navigator.wakeLock.request('screen');
+      } catch (e) {
+        /* no soportado / denegado: sin drama */
+      }
+    };
+    request();
+    const onVis = () => {
+      if (document.visibilityState === 'visible') request();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      try {
+        if (lock) lock.release();
+      } catch (e) {
+        /* ya liberado */
+      }
+    };
+  }, []);
+
+  // El botón ATRÁS del teléfono cierra la letra (no saca de la app) — el
+  // gesto natural para alguien no técnico.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const closedByPop = useRef(false);
+  useEffect(() => {
+    window.history.pushState({ singerView: true }, '');
+    const onPop = () => {
+      closedByPop.current = true;
+      onCloseRef.current();
+    };
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      if (!closedByPop.current) window.history.back();
+    };
+  }, []);
+
   const changeSize = (d) => {
     setLyricSize((prev) => {
       const next = Math.min(SIZE_MAX, Math.max(SIZE_MIN, prev + d));
@@ -208,7 +253,7 @@ const SingerView = ({ song, videoId, onClose }) => {
         className="shrink-0 border-b border-white/5 bg-main/95"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="flex items-center gap-2 px-3 py-2 overflow-x-auto">
+        <div className="flex items-center flex-wrap gap-2 px-3 py-2">
           <button
             onClick={onClose}
             className="shrink-0 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-300 active:bg-white/10"
