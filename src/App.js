@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from './context/AuthContext';
 import { useData } from './hooks/useData';
 import { useSongFilters } from './hooks/useSongFilters';
@@ -77,6 +77,16 @@ function App() {
   // 1. Handlers
   const handleLogoClick = () => setLogoClicks((prev) => prev + 1);
 
+  const handleEditSong = useCallback((s) => {
+    setEditingSong(s);
+    setShowSongForm(true);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchTerm('');
+    setGenreFilter('Todas');
+  }, []);
+
   useEffect(() => {
     if (logoClicks >= 5) {
       setShowLoginModal(true);
@@ -116,11 +126,13 @@ function App() {
     }
   };
 
-  const onDeleteSongHandler = (idOrIds, callback) => {
+  // Estables (useCallback): son props de SongList (memo); si se recrean en
+  // cada render, toda la lista se re-renderiza al tipear en el buscador.
+  const onDeleteSongHandler = useCallback((idOrIds, callback) => {
     const count = Array.isArray(idOrIds) ? idOrIds.length : 1;
     setSongToDeleteInfo({ ids: idOrIds, count, onSuccess: callback });
     setIsDeleteSongModalOpen(true);
-  };
+  }, []);
 
   const onConfirmDeleteSong = async () => {
     if (!songToDeleteInfo) return;
@@ -147,7 +159,8 @@ function App() {
     }
   };
 
-  const onRemoveFromSetlistHandler = async (idOrIds, callback) => {
+  const onRemoveFromSetlistHandler = useCallback(
+    async (idOrIds, callback) => {
     if (!selectedSetlist) return;
     try {
       const updated = await removeFromSetlist(idOrIds, selectedSetlist.id);
@@ -157,9 +170,12 @@ function App() {
     } catch (err) {
       setErrorAlert({ isOpen: true, message: 'No se pudieron quitar' });
     }
-  };
+    },
+    [selectedSetlist, removeFromSetlist]
+  );
 
-  const onAddToSetlistHandler = async (ids, setlistId) => {
+  const onAddToSetlistHandler = useCallback(
+    async (ids, setlistId) => {
     try {
       const updated = await addToSetlist(ids, setlistId);
       if (selectedSetlist?.id === setlistId) setSelectedSetlist(updated);
@@ -167,7 +183,9 @@ function App() {
     } catch (err) {
       setErrorAlert({ isOpen: true, message: 'No se pudieron añadir' });
     }
-  };
+    },
+    [selectedSetlist, addToSetlist]
+  );
 
   const onDeleteSetlistHandler = (id) => {
     setSetlistToDelete(id);
@@ -244,14 +262,7 @@ function App() {
             <SongList
               songs={filteredSongs}
               onSongSelect={setSelectedSong}
-              onEditSong={
-                isAdmin
-                  ? (s) => {
-                      setEditingSong(s);
-                      setShowSongForm(true);
-                    }
-                  : null
-              }
+              onEditSong={isAdmin ? handleEditSong : null}
               onDeleteSong={
                 isAdmin
                   ? selectedSetlist
@@ -263,10 +274,7 @@ function App() {
               setlists={isAdmin ? setlists : null}
               onAddToSetlist={onAddToSetlistHandler}
               loading={loading}
-              onClearFilters={() => {
-                setSearchTerm('');
-                setGenreFilter('Todas');
-              }}
+              onClearFilters={handleClearFilters}
             />
           )}
 

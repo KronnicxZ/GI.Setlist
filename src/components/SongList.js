@@ -19,14 +19,14 @@ const SongCard = memo(
     return (
       <div
         onClick={() => onSongSelect(song)}
-        className={`flex items-center space-x-3 p-3 rounded-2xl border transition-all duration-200 active:scale-[0.97] will-change-transform relative ${
+        className={`flex items-center space-x-3 p-3 rounded-2xl border transition-[transform,background-color,border-color] duration-200 active:scale-[0.97] relative ${
           isOpen ? 'z-[200]' : 'song-card-optimized overflow-hidden'
         } ${isSelected ? 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/5' : 'bg-white/[0.04] border-white/5'} w-full`}
       >
         {isAdmin && (
           <div
             onClick={(e) => onSelectSong(e, song.id || song._id)}
-            className="shrink-0 flex items-center justify-center p-1"
+            className="shrink-0 flex items-center justify-center p-2 -ml-1"
           >
             <div
               className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${isSelected ? 'bg-primary border-primary' : 'border-white/10'}`}
@@ -67,15 +67,15 @@ const SongCard = memo(
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-0.5">
             <h3 className="font-bold text-sm text-white truncate pr-2">{song.title}</h3>
-            <span className="text-[9px] font-black text-primary px-1.5 py-0.5 bg-primary/10 rounded leading-none">
+            <span className="text-[11px] font-black text-primary px-1.5 py-0.5 bg-primary/10 rounded leading-none">
               {song.key || '-'}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-[11px] text-gray-500 truncate pr-2">
+            <p className="text-[12px] text-gray-500 truncate pr-2">
               {song.artist || 'Artista desconocido'}
             </p>
-            <span className="text-[9px] font-mono text-gray-500 tabular-nums">
+            <span className="text-[11px] font-mono text-gray-500 tabular-nums">
               {song.bpm ? `${song.bpm} BPM` : '-'}
             </span>
           </div>
@@ -87,7 +87,7 @@ const SongCard = memo(
           >
             <button
               onClick={() => onMenuToggle(song.id || song._id)}
-              className="p-2 text-gray-500 active:text-white"
+              className="p-3 -mr-1 text-gray-500 active:text-white"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -97,7 +97,7 @@ const SongCard = memo(
               </svg>
             </button>
             {isOpen && (
-              <div className="absolute right-0 top-full mt-1 w-32 bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50 py-1 overflow-hidden">
+              <div className="absolute right-0 top-full mt-1 w-32 bg-card border border-white/10 rounded-xl shadow-2xl z-50 py-1 overflow-hidden">
                 <button
                   onClick={() => {
                     onEdit(song);
@@ -140,7 +140,7 @@ const EmptyState = ({ onClearFilters }) => (
       <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/30 transition-all duration-500"></div>
       <div className="w-full h-full bg-[#161616] rounded-full flex items-center justify-center relative z-10 border border-primary/20">
         <svg
-          className="w-10 h-10 text-primary opacity-90 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]"
+          className="w-10 h-10 text-primary opacity-90 drop-shadow-[0_0_8px_rgba(251,174,0,0.5)]"
           viewBox="0 0 24 24"
         >
           <path
@@ -253,7 +253,7 @@ const SongList = ({
                   <span className="hidden sm:inline">Añadir a Setlist</span>
                 </button>
                 {isBulkSetlistOpen && (
-                  <div className="absolute right-0 mt-2 w-56 py-2 bg-[#0a0a0a] border border-white/10 rounded-sub shadow-2xl z-[100] animate-fade-in backdrop-blur-3xl">
+                  <div className="absolute right-0 mt-2 w-56 py-2 bg-main border border-white/10 rounded-sub shadow-2xl z-[100] animate-fade-in backdrop-blur-3xl">
                     <div className="px-4 py-2 border-b border-white/5 mb-1">
                       <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
                         Seleccionar Setlist
@@ -381,7 +381,7 @@ const SongList = ({
                 songs.map((song) => (
                   <tr
                     key={song.id || song._id}
-                    className={`group hover:bg-white/[0.02] cursor-pointer relative ${openMenuId === (song.id || song._id) ? 'z-[60]' : 'z-10'}`}
+                    className={`group hover:bg-white/[0.05] cursor-pointer relative ${openMenuId === (song.id || song._id) ? 'z-[60]' : 'z-10'}`}
                     onClick={() => onSongSelect(song)}
                   >
                     {isAdmin && (
@@ -458,7 +458,7 @@ const SongList = ({
                           </svg>
                         </button>
                         {openMenuId === (song.id || song._id) && (
-                          <div className="absolute right-6 top-10 w-40 bg-[#0a0a0a] border border-white/10 rounded-sub shadow-2xl z-50 py-2 text-left backdrop-blur-3xl">
+                          <div className="absolute right-6 top-10 w-40 bg-main border border-white/10 rounded-sub shadow-2xl z-50 py-2 text-left backdrop-blur-3xl">
                             <button
                               onClick={() => {
                                 onEditSong(song);

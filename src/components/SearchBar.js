@@ -1,13 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const SearchBar = ({ value, onSearch }) => {
+  // El input responde al instante (estado local); la búsqueda real (filtrado +
+  // fuzzy sobre toda la lista) se dispara con un pequeño debounce para no
+  // recomputar y re-renderizar todo el listado en cada tecla.
+  const [local, setLocal] = useState(value);
+
+  useEffect(() => {
+    setLocal(value); // sync externo (p. ej. limpiar filtros)
+  }, [value]);
+
+  useEffect(() => {
+    if (local === value) return undefined;
+    const t = setTimeout(() => onSearch(local), 180);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [local]);
+
   return (
     <div className="relative group">
       <input
         type="text"
         placeholder="Buscar por título o artista..."
-        value={value}
-        onChange={(e) => onSearch(e.target.value)}
+        value={local}
+        onChange={(e) => setLocal(e.target.value)}
         className="w-full h-[42px] pl-11 pr-10 bg-white/5 border border-white/10 rounded-sub text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:bg-white/[0.08] transition-all font-medium text-sm"
       />
       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-hover:text-primary transition-colors">
@@ -19,9 +35,12 @@ const SearchBar = ({ value, onSearch }) => {
           />
         </svg>
       </div>
-      {value && (
+      {local && (
         <button
-          onClick={() => onSearch('')}
+          onClick={() => {
+            setLocal('');
+            onSearch('');
+          }}
           className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-white transition-colors"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

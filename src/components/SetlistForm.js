@@ -70,6 +70,18 @@ const SetlistForm = ({ songs, initialData, onSubmit, onCancel }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Reorden táctil: el drag-and-drop HTML5 no dispara en touch, así que en
+  // móvil el orden se cambia con ▲/▼ (también útiles en desktop).
+  const moveSong = (idx, dir) => {
+    setFormData((prev) => {
+      const next = [...prev.songs];
+      const j = idx + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return { ...prev, songs: next };
+    });
+  };
+
   const handleSongToggle = (songId) => {
     setFormData((prev) => ({
       ...prev,
@@ -135,8 +147,8 @@ const SetlistForm = ({ songs, initialData, onSubmit, onCancel }) => {
   );
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[250] flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-surface border border-white/10 rounded-main w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative">
+    <div className="fixed inset-0 bg-black/80 md:backdrop-blur-md z-[250] flex items-center justify-center p-0 md:p-4 animate-fade-in">
+      <div className="bg-surface border-0 md:border border-white/10 rounded-none md:rounded-main w-full max-w-none md:max-w-2xl h-full md:h-auto max-h-full md:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative">
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
 
         <div className="relative py-5 px-8 border-b border-white/5 flex justify-between items-center">
@@ -243,7 +255,7 @@ const SetlistForm = ({ songs, initialData, onSubmit, onCancel }) => {
                   </div>
 
                   <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                    {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((d) => (
+                    {['D', 'L', 'M', 'X', 'J', 'V', 'S'].map((d) => (
                       <div key={d} className="text-[10px] font-bold text-gray-600">
                         {d}
                       </div>
@@ -305,7 +317,7 @@ const SetlistForm = ({ songs, initialData, onSubmit, onCancel }) => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
-                    Orden del Setlist <span className="text-gray-600 lowercase">(arrastra)</span>
+                    Orden del Setlist <span className="text-gray-600 lowercase">(▲▼ o arrastra)</span>
                   </label>
                   <span className="text-[10px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
                     {formData.songs.length} seleccionadas
@@ -349,15 +361,39 @@ const SetlistForm = ({ songs, initialData, onSubmit, onCancel }) => {
                               {song.artist || 'Artista desconocido'}
                             </div>
                           </div>
-                          <div className="text-right flex-shrink-0 text-gray-500 text-xs font-mono w-12 hidden sm:block">
+                          <div className="text-right flex-shrink-0 text-gray-500 text-xs font-mono w-8">
                             #{idx + 1}
                           </div>
                         </div>
 
+                        <div className="flex flex-col ml-2 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => moveSong(idx, -1)}
+                            disabled={idx === 0}
+                            aria-label="Subir"
+                            className="px-2 py-1 text-gray-500 hover:text-primary disabled:opacity-20 rounded-md transition-colors"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveSong(idx, 1)}
+                            disabled={idx === formData.songs.length - 1}
+                            aria-label="Bajar"
+                            className="px-2 py-1 text-gray-500 hover:text-primary disabled:opacity-20 rounded-md transition-colors"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
+                            </svg>
+                          </button>
+                        </div>
                         <button
                           type="button"
                           onClick={() => handleSongToggle(song.id)}
-                          className="p-2 ml-2 text-gray-500 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0 group"
+                          className="p-2 ml-1 text-gray-500 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0 group"
                         >
                           <svg
                             className="w-5 h-5 group-hover:scale-110 transition-transform"

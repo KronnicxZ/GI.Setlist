@@ -15,26 +15,36 @@ export const useSongFilters = (songs, selectedSetlist, searchTerm, genreFilter, 
       .filter(Boolean);
   }, [songs, selectedSetlist]);
 
-  const filteredSongs = useMemo(() => {
+  // 1. Filtrar por género (memo aparte: no depende del término de búsqueda)
+  const genreFiltered = useMemo(() => {
     const normalize = (text) =>
       text
         ?.toString()
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-
-    // 1. Filtrar por género primero
-    let list = contextSongs.filter((song) => {
+        .replace(/[̀-ͯ]/g, '');
+    return contextSongs.filter((song) => {
       return genreFilter === 'Todas' || normalize(song.genre) === normalize(genreFilter);
     });
+  }, [contextSongs, genreFilter]);
 
-    // 2. Aplicar Búsqueda Difusa (Fuzzy Search) si hay término
-    if (searchTerm.trim()) {
-      const fuse = new Fuse(list, {
+  // Índice difuso construido UNA vez por lista (antes se reconstruía en cada
+  // tecla: O(n) por carácter — el lag de tipeo que se sentía en móvil).
+  const fuse = useMemo(
+    () =>
+      new Fuse(genreFiltered, {
         keys: ['title', 'artist', 'genre'],
         threshold: 0.4, // Ajuste de sensibilidad (0.0 = exacto, 1.0 = todo coincide)
         includeScore: true,
-      });
+      }),
+    [genreFiltered]
+  );
+
+  const filteredSongs = useMemo(() => {
+    let list = genreFiltered;
+
+    // 2. Aplicar Búsqueda Difusa (Fuzzy Search) si hay término
+    if (searchTerm.trim()) {
       const results = fuse.search(searchTerm);
       list = results.map((r) => r.item);
     }
@@ -43,7 +53,7 @@ export const useSongFilters = (songs, selectedSetlist, searchTerm, genreFilter, 
     if (selectedSetlist && !searchTerm.trim()) return list;
 
     if (!searchTerm.trim()) {
-      return list.sort((a, b) => {
+      return [...list].sort((a, b) => {
         const compareStrings = (s1, s2) =>
           (s1 || '').toString().localeCompare((s2 || '').toString());
         switch (sortBy) {
@@ -64,7 +74,7 @@ export const useSongFilters = (songs, selectedSetlist, searchTerm, genreFilter, 
     }
 
     return list;
-  }, [contextSongs, searchTerm, genreFilter, sortBy, selectedSetlist]);
+  }, [genreFiltered, fuse, searchTerm, sortBy, selectedSetlist]);
 
   return { contextSongs, filteredSongs };
 };

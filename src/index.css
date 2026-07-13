@@ -184,11 +184,14 @@ input[type='number'] {
   font-family: 'Inter', sans-serif;
   line-height: 2.2;
   white-space: pre-wrap;
+  /* Tamaño base pensado para leer a un brazo de distancia (escenario).
+     El PlayerModal lo sobreescribe con el control A−/A+ del usuario. */
+  font-size: 17px;
 }
 
 .lyrics-view .chord {
   color: var(--primary) !important;
-  font-weight: 600;
+  font-weight: 700;
   font-family:
     'Inter',
     -apple-system,
@@ -223,14 +226,16 @@ input[type='number'] {
 
 .lyrics-view .section-label {
   color: #60a5fa !important;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   display: flex;
   align-items: center;
   margin-top: 1.5em;
   margin-bottom: 0.8em;
-  font-size: 0.7rem;
+  /* En em (no rem): el título de sección escala CON el zoom de letra y ya no
+     queda más pequeño que el texto que encabeza (jerarquía invertida). */
+  font-size: 0.85em;
   padding-left: 12px;
   border-left: 3px solid #60a5fa;
   background: transparent;
