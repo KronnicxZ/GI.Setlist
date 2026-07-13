@@ -1,4 +1,4 @@
-import React, { useState, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useData } from '../hooks/useData';
 import { extractYoutubeVideoId } from '../utils/youtube';
 
@@ -21,6 +21,10 @@ const SingersApp = () => {
   const [setlistId, setSetlistId] = useState(null); // null = todas
   const [selected, setSelected] = useState(null);
 
+  useEffect(() => {
+    document.title = 'GI Cantantes — Letras y Tono';
+  }, []);
+
   const activeSetlist = setlists.find((s) => s.id === setlistId) || null;
 
   const visibleSongs = useMemo(() => {
@@ -31,6 +35,7 @@ const SingersApp = () => {
     }
     const q = norm(query.trim());
     if (q) list = list.filter((s) => norm(s.title).includes(q) || norm(s.artist).includes(q));
+    if (!activeSetlist) list = [...list].sort((a, b) => norm(a.title).localeCompare(norm(b.title)));
     return list;
   }, [songs, activeSetlist, query]);
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../hooks/useData';
 import { cleanLyricsForProjection, copyText } from '../utils/projection';
 import { showToast } from '../utils/toast';
@@ -19,7 +19,24 @@ const ProductionApp = () => {
   const { songs, setlists, loading } = useData(API_URL);
   const [query, setQuery] = useState('');
   const [setlistId, setSetlistId] = useState(null);
-  const [keepSections, setKeepSections] = useState(false);
+  // Etiquetas de sección VISIBLES por defecto; un clic las quita. Se recuerda.
+  const [keepSections, setKeepSections] = useState(() => {
+    try {
+      return localStorage.getItem('gis.prod.keepSections') !== '0';
+    } catch (e) {
+      return true;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('gis.prod.keepSections', keepSections ? '1' : '0');
+    } catch (e) {
+      /* sin storage */
+    }
+  }, [keepSections]);
+  useEffect(() => {
+    document.title = 'GI Producción — Letras';
+  }, []);
   const [openId, setOpenId] = useState(null); // vista previa expandida
 
   const activeSetlist = setlists.find((s) => s.id === setlistId) || null;
@@ -32,6 +49,7 @@ const ProductionApp = () => {
     }
     const q = norm(query.trim());
     if (q) list = list.filter((s) => norm(s.title).includes(q) || norm(s.artist).includes(q));
+    if (!activeSetlist) list = [...list].sort((a, b) => norm(a.title).localeCompare(norm(b.title)));
     return list;
   }, [songs, activeSetlist, query]);
 
@@ -115,15 +133,25 @@ const ProductionApp = () => {
               </button>
             ))}
           </div>
-          <label className="flex items-center gap-2 text-[11px] text-gray-400 font-medium select-none w-fit cursor-pointer">
-            <input
-              type="checkbox"
-              checked={keepSections}
-              onChange={(e) => setKeepSections(e.target.checked)}
-              className="w-4 h-4 accent-[#FBAE00]"
-            />
-            Incluir etiquetas de sección (CORO, VERSO…)
-          </label>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5">
+              <button
+                onClick={() => setKeepSections(true)}
+                className={`px-4 py-2 text-[11px] font-bold transition-colors ${keepSections ? 'bg-primary text-black' : 'text-gray-400'}`}
+              >
+                Con etiquetas
+              </button>
+              <button
+                onClick={() => setKeepSections(false)}
+                className={`px-4 py-2 text-[11px] font-bold border-l border-white/10 transition-colors ${!keepSections ? 'bg-primary text-black' : 'text-gray-400'}`}
+              >
+                Sin etiquetas
+              </button>
+            </div>
+            <span className="text-[10px] text-gray-500">
+              {keepSections ? '[CORO], [VERSO]… visibles' : 'solo la letra'}
+            </span>
+          </div>
         </div>
       </header>
 
