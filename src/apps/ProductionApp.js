@@ -44,6 +44,15 @@ const ProductionApp = () => {
     document.title = 'GI Producción — Letras';
   }, []);
 
+  const [openIds, setOpenIds] = useState(() => new Set()); // filas expandidas
+  const toggleOpen = (id) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
   const orderedSetlists = useMemo(() => orderSetlists(setlists), [setlists]);
   const activeSetlist = setlists.find((s) => s.id === setlistId) || null;
 
@@ -186,32 +195,51 @@ const ProductionApp = () => {
             <p className="text-center text-gray-500 py-20 text-sm">No hay canciones.</p>
           ) : (
             visibleSongs.map((song, idx) => {
+              const id = song.id || song._id;
               const clean = cleanLyricsForProjection(song.lyrics, { keepSections });
+              const isOpen = openIds.has(id);
               return (
                 <div
-                  key={song.id || song._id}
+                  key={id}
                   className="rounded-xl bg-white/[0.04] border border-white/5 overflow-hidden"
                 >
-                  {/* Cabecera: título + botón COPIAR grande */}
-                  <div className="flex items-center gap-3 p-4 border-b border-white/5">
-                    {activeSetlist && (
-                      <span className="shrink-0 w-7 h-7 rounded-full bg-primary/15 text-primary font-black text-sm flex items-center justify-center">
-                        {idx + 1}
+                  {/* Fila CONTRAÍDA: toca para expandir la letra; Copiar siempre a mano */}
+                  <div className="flex items-center gap-3 p-3">
+                    <button
+                      onClick={() => toggleOpen(id)}
+                      className="flex-1 min-w-0 flex items-center gap-3 text-left"
+                      aria-expanded={isOpen}
+                    >
+                      {activeSetlist && (
+                        <span className="shrink-0 w-7 h-7 rounded-full bg-primary/15 text-primary font-black text-sm flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                      )}
+                      <span className="flex-1 min-w-0">
+                        <span className="block font-bold text-[16px] truncate text-white">
+                          {song.title}
+                        </span>
+                        <span className="block text-xs text-gray-500 truncate">
+                          {song.artist || 'Artista desconocido'}
+                          {!clean && <span className="text-red-400/80"> · sin letra</span>}
+                        </span>
                       </span>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-[16px] truncate text-white">{song.title}</h3>
-                      <p className="text-xs text-gray-500 truncate">
-                        {song.artist || 'Artista desconocido'}
-                        {!clean && <span className="text-red-400/80"> · sin letra</span>}
-                      </p>
-                    </div>
+                      <svg
+                        className={`shrink-0 w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                        />
+                      </svg>
+                    </button>
                     <button
                       onClick={() => handleCopySong(song)}
                       disabled={!clean}
-                      className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-black text-sm font-black uppercase tracking-wide disabled:opacity-30 active:scale-95 transition-transform"
+                      className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-primary text-black text-sm font-black uppercase tracking-wide disabled:opacity-30 active:scale-95 transition-transform"
                     >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24">
                         <path
                           fill="currentColor"
                           d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
@@ -221,16 +249,17 @@ const ProductionApp = () => {
                     </button>
                   </div>
 
-                  {/* Letra visible directamente (todo claro, sin abrir nada) */}
-                  {clean ? (
-                    <pre className="whitespace-pre-wrap text-[14px] leading-relaxed text-gray-300 font-sans px-4 py-3">
-                      {clean}
-                    </pre>
-                  ) : (
-                    <p className="px-4 py-4 text-sm text-gray-600 italic">
-                      Sin letra cargada en LivePads.
-                    </p>
-                  )}
+                  {/* Letra SOLO cuando se expande la fila */}
+                  {isOpen &&
+                    (clean ? (
+                      <pre className="whitespace-pre-wrap text-[14px] leading-relaxed text-gray-300 font-sans px-4 pb-4 border-t border-white/5 pt-3">
+                        {clean}
+                      </pre>
+                    ) : (
+                      <p className="px-4 py-4 text-sm text-gray-600 italic border-t border-white/5">
+                        Sin letra cargada en LivePads.
+                      </p>
+                    ))}
                 </div>
               );
             })
