@@ -1,18 +1,19 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import parse from 'html-react-parser';
 import { transposeText, formatLyricsForDisplay, NOTES } from '../utils/chordTransposer';
 import { cleanLyricsForProjection } from '../utils/projection';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Vista CANTANTE — letra a pantalla completa estilo LivePads, ultra ligera:
-//   · Barra superior: tono actual, transpose ▼0▲, zoom A−/A+, toggle acordes,
-//     metrónomo compacto (Tone.js solo si se usa).
-//   · La "canción" es un REPRODUCTOR compacto tipo MP3 (el iframe de YouTube
-//     vive oculto en 1px y solo se controla por API) — nada de video ocupando
-//     pantalla ni renderizado pesado. Botón para expandir el video si hace falta.
-//   · Sin popovers de acordes ni BD de guitarra ni html2canvas: solo letra.
-// Nota: transponer el AUDIO de YouTube no es posible en web (el iframe no
-// expone el stream); el transpose aquí es de acordes/tono visual.
+//   · Toolbar: tono (y tono del VOCALISTA si existe), transpose ▼0▲, A−/A+,
+//     Con acordes/Solo letra (persistido), metrónomo de un toque.
+//   · Reproductor tipo MP3 al PIE (YouTube oculto en 1px, controlado por API),
+//     con video expandible, y navegación ◀ ▶ por el setlist sin salir de la
+//     letra ("3/7").
+//   · Auto-scroll tipo teleprompter (OFF→1x→2x→3x; cualquier toque lo pausa).
+//   · Wake Lock (pantalla encendida) y botón atrás del teléfono = cerrar.
+// Nota: transponer el AUDIO de YouTube no es posible en web; el transpose es
+// de acordes/tono visual.
 // ─────────────────────────────────────────────────────────────────────────
 
 const LYRIC_SIZE_KEY = 'gis.lyricSize';
@@ -35,10 +36,11 @@ const fmtTime = (s) => {
   return `${m}:${ss.toString().padStart(2, '0')}`;
 };
 
-const SingerView = ({ song, videoId, onClose }) => {
+const SCROLL_SPEEDS = [0, 0.4, 0.8, 1.4]; // px por frame aprox (~24/48/84 px/s)
+
+const SingerView = ({ song, videoId, onClose, playlist = [], onNavigate }) => {
   const [semitones, setSemitones] = useState(0);
-  // Por defecto SOLO LETRA (lo que un cantante quiere leer); la elección se
-  // recuerda para el que sí trabaja con acordes.
+  // Por defecto SOLO LETRA (lo que un cantante quiere leer); se recuerda.
   const [showChords, setShowChords] = useState(() => {
     try {
       return localStorage.getItem('gis.singer.chords') === '1';
@@ -59,8 +61,27 @@ const SingerView = ({ song, videoId, onClose }) => {
   const [lyricSize, setLyricSize] = useState(readSize);
   const [showVideo, setShowVideo] = useState(false);
 
+  // ── Posición en el setlist (navegación ◀ ▶ sin salir de la letra) ──
+  const songId = (song.id || song._id)?.toString();
+  const idx = playlist.findIndex((s) => (s.id || s._id)?.toString() === songId);
+  const prevSong = idx > 0 ? playlist[idx - 1] : null;
+  const nextSong = idx >= 0 && idx < playlist.length - 1 ? playlist[idx + 1] : null;
+
+  const mainRef = useRef(null);
+  const navigateTo = useCallback(
+    (target) => {
+      if (!target || !onNavigate) return;
+      setSemitones(0); // cada canción arranca en su tono
+      setShowVideo(false);
+      if (mainRef.current) mainRef.current.scrollTop = 0;
+      onNavigate(target);
+    },
+    [onNavigate]
+  );
+
   // ── Reproductor (YouTube oculto, UI de MP3) ──
-  const [player, setPlayer] = useState(null);
+  const playerRef = useRef(null);
+  const [playerReady, setPlayerReady] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(0);
   const [dur, setDur] = useState(0);
@@ -72,13 +93,16 @@ const SingerView = ({ song, videoId, onClose }) => {
   const synthRef = useRef(null);
   const repeatRef = useRef(null);
 
+  // ── Auto-scroll (teleprompter) ──
+  const [scrollSpeed, setScrollSpeed] = useState(0); // índice en SCROLL_SPEEDS
+  const rafRef = useRef(null);
+  const accRef = useRef(0);
+
   useEffect(() => {
     document.title = `${song.title} — GI Cantantes`;
   }, [song.title]);
 
-  // Pantalla SIEMPRE encendida mientras la letra está abierta (Wake Lock):
-  // en escenario el teléfono no se puede apagar a mitad de canción. Se
-  // re-solicita al volver a la pestaña (el lock se libera al ocultarla).
+  // Pantalla SIEMPRE encendida mientras la letra está abierta (Wake Lock).
   useEffect(() => {
     let lock = null;
     const request = async () => {
@@ -103,8 +127,7 @@ const SingerView = ({ song, videoId, onClose }) => {
     };
   }, []);
 
-  // El botón ATRÁS del teléfono cierra la letra (no saca de la app) — el
-  // gesto natural para alguien no técnico.
+  // Botón ATRÁS del teléfono = cerrar la letra (no salir de la app).
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const closedByPop = useRef(false);
@@ -134,21 +157,21 @@ const SingerView = ({ song, videoId, onClose }) => {
   };
 
   // Tono actual (badge) según transposición
-  const currentKey = useMemo(() => {
-    const base = (song.key || song.originalKey || '').trim();
-    if (!base) return '—';
-    const isMinor = /m$/i.test(base) && !/maj/i.test(base);
-    const root = base.replace(/m$/i, '');
-    const idx = NOTES.indexOf(root.length > 1 ? root[0].toUpperCase() + root[1] : root.toUpperCase());
-    if (idx === -1) return base;
-    return NOTES[(idx + semitones + 120) % 12] + (isMinor ? 'm' : '');
-  }, [song.key, song.originalKey, semitones]);
+  const keyOf = useCallback((base, semis) => {
+    const b = (base || '').trim();
+    if (!b) return null;
+    const isMinor = /m$/i.test(b) && !/maj/i.test(b);
+    const root = b.replace(/m$/i, '');
+    const norm = root.length > 1 ? root[0].toUpperCase() + root[1] : root.toUpperCase();
+    const i = NOTES.indexOf(norm);
+    if (i === -1) return b;
+    return NOTES[(i + semis + 120) % 12] + (isMinor ? 'm' : '');
+  }, []);
+  const currentKey = keyOf(song.key || song.originalKey, semitones) || '—';
+  const vocalistKey = song.vocalistKey ? keyOf(song.vocalistKey, 0) : null;
 
-  // Letra memoizada (no se re-parsea por los ticks del reproductor).
-  // CON acordes: transpone y muestra el cifrado encima de cada línea.
-  // SOLO LETRA: pasa por el limpiador de proyección — las líneas de cifrado
-  // desaparecen POR COMPLETO (no dejan huecos) y quedan las etiquetas [CORO]
-  // como píldoras; texto compacto y fácil de leer.
+  // Letra memoizada. CON acordes: transpuesta con cifrado encima. SOLO LETRA:
+  // pasa por el limpiador — las líneas de cifrado desaparecen del todo.
   const renderedLyrics = useMemo(() => {
     if (!song.lyrics)
       return <p className="text-gray-600 italic">No hay letra disponible para esta canción.</p>;
@@ -158,10 +181,18 @@ const SingerView = ({ song, videoId, onClose }) => {
     return parse(formatLyricsForDisplay(source));
   }, [song.lyrics, semitones, showChords]);
 
-  // ── YouTube: player oculto controlado por API ──
+  // ── YouTube: un solo player; al navegar de canción se re-cuea el video ──
   useEffect(() => {
-    if (!videoId) return undefined;
+    if (!videoId) {
+      // Canción sin video: para el audio del anterior si lo había.
+      if (playerRef.current && playerRef.current.stopVideo) playerRef.current.stopVideo();
+      setPlaying(false);
+      setCur(0);
+      setDur(0);
+      return undefined;
+    }
     let cancelled = false;
+
     const create = () => {
       if (cancelled) return;
       new window.YT.Player('singer-audio-player', {
@@ -172,7 +203,8 @@ const SingerView = ({ song, videoId, onClose }) => {
         events: {
           onReady: (e) => {
             if (cancelled) return;
-            setPlayer(e.target);
+            playerRef.current = e.target;
+            setPlayerReady(true);
             setDur(e.target.getDuration() || 0);
           },
           onStateChange: (e) => {
@@ -182,8 +214,16 @@ const SingerView = ({ song, videoId, onClose }) => {
         },
       });
     };
-    if (window.YT && window.YT.Player) create();
-    else {
+
+    if (playerRef.current && playerRef.current.cueVideoById) {
+      // Player ya creado (venimos de otra canción): solo cambia el video.
+      playerRef.current.cueVideoById(videoId);
+      setPlaying(false);
+      setCur(0);
+      setDur(0);
+    } else if (window.YT && window.YT.Player) {
+      create();
+    } else {
       const prev = window.onYouTubeIframeAPIReady;
       window.onYouTubeIframeAPIReady = () => {
         if (typeof prev === 'function') prev();
@@ -197,38 +237,43 @@ const SingerView = ({ song, videoId, onClose }) => {
         first.parentNode.insertBefore(tag, first);
       }
     }
+
     return () => {
       cancelled = true;
     };
   }, [videoId]);
 
-  // Tick de progreso (1/s, solo si cambia el segundo visible)
+  // Tick de progreso (solo re-renderiza al cambiar el segundo visible)
   useEffect(() => {
-    if (playing && player) {
+    if (playing && playerReady) {
       tickRef.current = setInterval(() => {
-        const t = player.getCurrentTime ? player.getCurrentTime() : 0;
+        const p = playerRef.current;
+        const t = p && p.getCurrentTime ? p.getCurrentTime() : 0;
         setCur((prev) => (Math.floor(prev) === Math.floor(t) ? prev : t));
       }, 500);
     }
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
     };
-  }, [playing, player]);
+  }, [playing, playerReady]);
 
   const togglePlay = () => {
-    if (!player) return;
-    if (playing) player.pauseVideo();
-    else player.playVideo();
+    const p = playerRef.current;
+    if (!p) return;
+    if (playing) p.pauseVideo();
+    else p.playVideo();
   };
   const seekBy = (s) => {
-    if (!player) return;
-    const t = Math.max(0, (player.getCurrentTime() || 0) + s);
-    player.seekTo(t, true);
+    const p = playerRef.current;
+    if (!p) return;
+    const t = Math.max(0, (p.getCurrentTime() || 0) + s);
+    p.seekTo(t, true);
     setCur(t);
   };
   const seekTo = (t) => {
-    if (!player) return;
-    player.seekTo(t, true);
+    const p = playerRef.current;
+    if (!p) return;
+    p.seekTo(t, true);
     setCur(t);
   };
 
@@ -260,6 +305,13 @@ const SingerView = ({ song, videoId, onClose }) => {
     }
     setMetroOn(!metroOn);
   };
+  // Al cambiar de canción con el metrónomo andando, sigue con el BPM nuevo.
+  useEffect(() => {
+    if (metroOn && toneRef.current) {
+      toneRef.current.getTransport().bpm.value = Number(song.bpm) || 120;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [song.bpm]);
   useEffect(
     () => () => {
       const Tone = toneRef.current;
@@ -271,9 +323,39 @@ const SingerView = ({ song, videoId, onClose }) => {
     []
   );
 
+  // ── Auto-scroll (teleprompter): rAF suave; cualquier toque lo detiene ──
+  useEffect(() => {
+    const speed = SCROLL_SPEEDS[scrollSpeed] || 0;
+    if (!speed) return undefined;
+    const step = () => {
+      const el = mainRef.current;
+      if (el) {
+        accRef.current += speed;
+        if (accRef.current >= 1) {
+          const px = Math.floor(accRef.current);
+          accRef.current -= px;
+          el.scrollTop += px;
+          if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
+            setScrollSpeed(0); // llegó al final
+            return;
+          }
+        }
+      }
+      rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [scrollSpeed]);
+  const stopAutoScroll = () => {
+    if (scrollSpeed) setScrollSpeed(0);
+  };
+  const cycleAutoScroll = () => setScrollSpeed((s) => (s + 1) % SCROLL_SPEEDS.length);
+
   return (
     <div className="fixed inset-0 z-[150] bg-main text-white flex flex-col">
-      {/* ── Barra superior estilo LivePads ── */}
+      {/* ── Toolbar estilo LivePads ── */}
       <header
         className="shrink-0 border-b border-white/5 bg-main/95"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
@@ -296,10 +378,18 @@ const SingerView = ({ song, videoId, onClose }) => {
             <p className="text-[11px] text-gray-500 truncate">{song.artist}</p>
           </div>
 
-          {/* Tono actual */}
+          {/* Tono actual + tono del VOCALISTA (dato clave para quien canta) */}
           <span className="shrink-0 px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-primary font-black text-sm">
             {currentKey}
           </span>
+          {vocalistKey && (
+            <span
+              className="shrink-0 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[12px] font-bold text-gray-200"
+              title="Tono del vocalista"
+            >
+              Voz: <span className="text-primary font-black">{vocalistKey}</span>
+            </span>
+          )}
 
           {/* BPM + metrónomo */}
           <button
@@ -353,6 +443,15 @@ const SingerView = ({ song, videoId, onClose }) => {
             </button>
           </div>
 
+          {/* Auto-scroll (teleprompter) */}
+          <button
+            onClick={cycleAutoScroll}
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-colors ${scrollSpeed ? 'bg-primary text-black border-primary' : 'bg-white/5 border-white/10 text-gray-400'}`}
+            title="Auto-scroll: un toque cambia la velocidad; tocar la letra lo detiene"
+          >
+            {scrollSpeed ? `Scroll ${scrollSpeed}x` : 'Auto-scroll'}
+          </button>
+
           {/* Acordes on/off */}
           <button
             onClick={toggleChords}
@@ -364,22 +463,38 @@ const SingerView = ({ song, videoId, onClose }) => {
       </header>
 
       {/* ── Letra ── */}
-      <main className="flex-1 min-h-0 overflow-y-auto px-5 md:px-10 py-6 custom-scrollbar">
-        <div
-          className={`lyrics-view max-w-3xl mx-auto text-gray-200 ${showChords ? '' : 'no-chords'}`}
-          style={{ fontSize: `${lyricSize}px` }}
-        >
-          {renderedLyrics}
+      <main
+        ref={mainRef}
+        onPointerDown={stopAutoScroll}
+        onWheel={stopAutoScroll}
+        className="flex-1 min-h-0 overflow-y-auto px-5 md:px-10 py-6 custom-scrollbar"
+      >
+        <div className="max-w-3xl mx-auto">
+          {/* Notas del director (dato que antes se perdía) */}
+          {song.notes && (
+            <div className="mb-5 px-4 py-3 rounded-lg bg-primary/5 border border-primary/20">
+              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">
+                Nota del director
+              </p>
+              <p className="text-sm text-gray-300 italic leading-relaxed">"{song.notes}"</p>
+            </div>
+          )}
+          <div
+            className={`lyrics-view text-gray-200 ${showChords ? '' : 'no-chords'}`}
+            style={{ fontSize: `${lyricSize}px` }}
+          >
+            {renderedLyrics}
+          </div>
         </div>
       </main>
 
-      {/* ── Reproductor tipo MP3 ABAJO (como un player de música) ── */}
-      {videoId && (
-        <footer
-          className="shrink-0 border-t border-white/5 bg-main/95 px-3 pt-2"
-          style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
-        >
-          {/* Video expandible ENCIMA de la barra (opcional) */}
+      {/* ── Pie: navegación del setlist + reproductor tipo MP3 ── */}
+      <footer
+        className="shrink-0 border-t border-white/5 bg-main/95 px-3 pt-2"
+        style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        {/* Video expandible ENCIMA de la barra (opcional) */}
+        {videoId && (
           <div
             className={
               showVideo
@@ -389,7 +504,50 @@ const SingerView = ({ song, videoId, onClose }) => {
           >
             <div id="singer-audio-player" className="w-full h-full" />
           </div>
-          <div className="max-w-3xl mx-auto">
+        )}
+
+        <div className="max-w-3xl mx-auto space-y-2">
+          {/* Navegación por el setlist sin salir de la letra */}
+          {playlist.length > 1 && idx >= 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigateTo(prevSong)}
+                disabled={!prevSong}
+                className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-left disabled:opacity-30 active:bg-white/10"
+              >
+                <span className="text-primary font-black">◀</span>
+                <span className="min-w-0">
+                  <span className="block text-[9px] text-gray-500 font-bold uppercase">
+                    Anterior
+                  </span>
+                  <span className="block text-[12px] font-bold truncate">
+                    {prevSong ? prevSong.title : '—'}
+                  </span>
+                </span>
+              </button>
+              <span className="shrink-0 px-2 text-[12px] font-mono font-bold text-gray-400">
+                {idx + 1}/{playlist.length}
+              </span>
+              <button
+                onClick={() => navigateTo(nextSong)}
+                disabled={!nextSong}
+                className="flex-1 min-w-0 flex items-center justify-end gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-right disabled:opacity-30 active:bg-white/10"
+              >
+                <span className="min-w-0">
+                  <span className="block text-[9px] text-gray-500 font-bold uppercase">
+                    Siguiente
+                  </span>
+                  <span className="block text-[12px] font-bold truncate">
+                    {nextSong ? nextSong.title : '—'}
+                  </span>
+                </span>
+                <span className="text-primary font-black">▶</span>
+              </button>
+            </div>
+          )}
+
+          {/* Barra de reproducción (solo si hay video/canción) */}
+          {videoId && (
             <div className="flex items-center gap-3 bg-white/[0.05] border border-white/10 rounded-lg px-3 py-2">
               <img
                 src={`https://img.youtube.com/vi/${videoId}/default.jpg`}
@@ -407,7 +565,7 @@ const SingerView = ({ song, videoId, onClose }) => {
               </button>
               <button
                 onClick={togglePlay}
-                disabled={!player}
+                disabled={!playerReady}
                 className="shrink-0 w-11 h-11 rounded-full bg-primary text-black flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
                 aria-label={playing ? 'Pausar' : 'Reproducir'}
               >
@@ -448,7 +606,7 @@ const SingerView = ({ song, videoId, onClose }) => {
                 title="Mostrar / ocultar video"
                 aria-label="Mostrar video"
               >
-                <svg className="w-4.5 h-4.5 w-5 h-5" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
                     d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"
@@ -456,9 +614,9 @@ const SingerView = ({ song, videoId, onClose }) => {
                 </svg>
               </button>
             </div>
-          </div>
-        </footer>
-      )}
+          )}
+        </div>
+      </footer>
     </div>
   );
 };
