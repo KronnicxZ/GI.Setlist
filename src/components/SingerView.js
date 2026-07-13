@@ -1,0 +1,395 @@
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import parse from 'html-react-parser';
+import { transposeText, formatLyricsForDisplay, NOTES } from '../utils/chordTransposer';
+
+// ─────────────────────────────────────────────────────────────────────────
+// Vista CANTANTE — letra a pantalla completa estilo LivePads, ultra ligera:
+//   · Barra superior: tono actual, transpose ▼0▲, zoom A−/A+, toggle acordes,
+//     metrónomo compacto (Tone.js solo si se usa).
+//   · La "canción" es un REPRODUCTOR compacto tipo MP3 (el iframe de YouTube
+//     vive oculto en 1px y solo se controla por API) — nada de video ocupando
+//     pantalla ni renderizado pesado. Botón para expandir el video si hace falta.
+//   · Sin popovers de acordes ni BD de guitarra ni html2canvas: solo letra.
+// Nota: transponer el AUDIO de YouTube no es posible en web (el iframe no
+// expone el stream); el transpose aquí es de acordes/tono visual.
+// ─────────────────────────────────────────────────────────────────────────
+
+const LYRIC_SIZE_KEY = 'gis.lyricSize';
+const SIZE_MIN = 14;
+const SIZE_MAX = 34;
+const readSize = () => {
+  try {
+    const n = parseInt(localStorage.getItem(LYRIC_SIZE_KEY), 10);
+    if (Number.isFinite(n)) return Math.min(SIZE_MAX, Math.max(SIZE_MIN, n));
+  } catch (e) {
+    /* sin storage */
+  }
+  return 19;
+};
+
+const fmtTime = (s) => {
+  if (!Number.isFinite(s) || s < 0) return '0:00';
+  const m = Math.floor(s / 60);
+  const ss = Math.floor(s % 60);
+  return `${m}:${ss.toString().padStart(2, '0')}`;
+};
+
+const SingerView = ({ song, videoId, onClose }) => {
+  const [semitones, setSemitones] = useState(0);
+  const [showChords, setShowChords] = useState(true);
+  const [lyricSize, setLyricSize] = useState(readSize);
+  const [showVideo, setShowVideo] = useState(false);
+
+  // ── Reproductor (YouTube oculto, UI de MP3) ──
+  const [player, setPlayer] = useState(null);
+  const [playing, setPlaying] = useState(false);
+  const [cur, setCur] = useState(0);
+  const [dur, setDur] = useState(0);
+  const tickRef = useRef(null);
+
+  // ── Metrónomo compacto (Tone.js diferido) ──
+  const [metroOn, setMetroOn] = useState(false);
+  const toneRef = useRef(null);
+  const synthRef = useRef(null);
+  const repeatRef = useRef(null);
+
+  useEffect(() => {
+    document.title = `${song.title} — GI Cantantes`;
+  }, [song.title]);
+
+  const changeSize = (d) => {
+    setLyricSize((prev) => {
+      const next = Math.min(SIZE_MAX, Math.max(SIZE_MIN, prev + d));
+      try {
+        localStorage.setItem(LYRIC_SIZE_KEY, String(next));
+      } catch (e) {
+        /* sin storage */
+      }
+      return next;
+    });
+  };
+
+  // Tono actual (badge) según transposición
+  const currentKey = useMemo(() => {
+    const base = (song.key || song.originalKey || '').trim();
+    if (!base) return '—';
+    const isMinor = /m$/i.test(base) && !/maj/i.test(base);
+    const root = base.replace(/m$/i, '');
+    const idx = NOTES.indexOf(root.length > 1 ? root[0].toUpperCase() + root[1] : root.toUpperCase());
+    if (idx === -1) return base;
+    return NOTES[(idx + semitones + 120) % 12] + (isMinor ? 'm' : '');
+  }, [song.key, song.originalKey, semitones]);
+
+  // Letra transpuesta + formateada, memoizada (no se re-parsea por los ticks)
+  const renderedLyrics = useMemo(() => {
+    if (!song.lyrics)
+      return <p className="text-gray-600 italic">No hay letra disponible para esta canción.</p>;
+    const formatted = formatLyricsForDisplay(transposeText(song.lyrics, semitones));
+    return parse(formatted);
+  }, [song.lyrics, semitones]);
+
+  // ── YouTube: player oculto controlado por API ──
+  useEffect(() => {
+    if (!videoId) return undefined;
+    let cancelled = false;
+    const create = () => {
+      if (cancelled) return;
+      new window.YT.Player('singer-audio-player', {
+        height: '100%',
+        width: '100%',
+        videoId,
+        playerVars: { autoplay: 0, controls: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+        events: {
+          onReady: (e) => {
+            if (cancelled) return;
+            setPlayer(e.target);
+            setDur(e.target.getDuration() || 0);
+          },
+          onStateChange: (e) => {
+            setPlaying(e.data === 1);
+            if (e.data === 1 && e.target.getDuration) setDur(e.target.getDuration() || 0);
+          },
+        },
+      });
+    };
+    if (window.YT && window.YT.Player) create();
+    else {
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (typeof prev === 'function') prev();
+        create();
+      };
+      if (!document.getElementById('yt-iframe-api')) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const first = document.getElementsByTagName('script')[0];
+        first.parentNode.insertBefore(tag, first);
+      }
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [videoId]);
+
+  // Tick de progreso (1/s, solo si cambia el segundo visible)
+  useEffect(() => {
+    if (playing && player) {
+      tickRef.current = setInterval(() => {
+        const t = player.getCurrentTime ? player.getCurrentTime() : 0;
+        setCur((prev) => (Math.floor(prev) === Math.floor(t) ? prev : t));
+      }, 500);
+    }
+    return () => {
+      if (tickRef.current) clearInterval(tickRef.current);
+    };
+  }, [playing, player]);
+
+  const togglePlay = () => {
+    if (!player) return;
+    if (playing) player.pauseVideo();
+    else player.playVideo();
+  };
+  const seekBy = (s) => {
+    if (!player) return;
+    const t = Math.max(0, (player.getCurrentTime() || 0) + s);
+    player.seekTo(t, true);
+    setCur(t);
+  };
+  const seekTo = (t) => {
+    if (!player) return;
+    player.seekTo(t, true);
+    setCur(t);
+  };
+
+  // ── Metrónomo compacto ──
+  const toggleMetro = async () => {
+    if (!metroOn) {
+      if (!toneRef.current) toneRef.current = await import('tone');
+      const Tone = toneRef.current;
+      if (Tone.getContext().state !== 'running') await Tone.start();
+      if (!synthRef.current) {
+        synthRef.current = new Tone.MembraneSynth({
+          pitchDecay: 0.001,
+          octaves: 1,
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 },
+        }).toDestination();
+      }
+      Tone.getTransport().bpm.value = Number(song.bpm) || 120;
+      repeatRef.current = Tone.getTransport().scheduleRepeat((time) => {
+        synthRef.current.triggerAttackRelease('C5', '32n', time, 0.7);
+      }, '4n');
+      Tone.getTransport().start('+0.05');
+    } else {
+      const Tone = toneRef.current;
+      if (Tone) {
+        if (repeatRef.current !== null) Tone.getTransport().clear(repeatRef.current);
+        Tone.getTransport().stop();
+      }
+    }
+    setMetroOn(!metroOn);
+  };
+  useEffect(
+    () => () => {
+      const Tone = toneRef.current;
+      if (!Tone) return;
+      if (synthRef.current) synthRef.current.dispose();
+      Tone.getTransport().stop();
+      Tone.getTransport().cancel();
+    },
+    []
+  );
+
+  return (
+    <div className="fixed inset-0 z-[150] bg-main text-white flex flex-col">
+      {/* ── Barra superior estilo LivePads ── */}
+      <header
+        className="shrink-0 border-b border-white/5 bg-main/95"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="flex items-center gap-2 px-3 py-2 overflow-x-auto">
+          <button
+            onClick={onClose}
+            className="shrink-0 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-300 active:bg-white/10"
+            aria-label="Volver"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+              />
+            </svg>
+          </button>
+          <div className="min-w-0 mr-auto">
+            <h2 className="text-sm font-black truncate leading-tight">{song.title}</h2>
+            <p className="text-[11px] text-gray-500 truncate">{song.artist}</p>
+          </div>
+
+          {/* Tono actual */}
+          <span className="shrink-0 px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-primary font-black text-sm">
+            {currentKey}
+          </span>
+
+          {/* BPM + metrónomo */}
+          <button
+            onClick={toggleMetro}
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg border font-bold text-[12px] transition-colors ${metroOn ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-300 border-white/10'}`}
+            title="Metrónomo"
+          >
+            {song.bpm ? `${song.bpm} BPM` : 'BPM'} {metroOn ? '■' : '▶'}
+          </button>
+
+          {/* Transpose ▼ 0 ▲ */}
+          <div className="shrink-0 flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden">
+            <button
+              onClick={() => setSemitones((s) => Math.max(-6, s - 1))}
+              className="px-2.5 py-1.5 text-gray-300 active:bg-white/10 font-black"
+              aria-label="Bajar tono"
+            >
+              ▼
+            </button>
+            <span
+              className={`px-2 font-mono text-[12px] font-bold ${semitones !== 0 ? 'text-primary' : 'text-gray-400'}`}
+              onDoubleClick={() => setSemitones(0)}
+              title="Doble clic: restaurar"
+            >
+              {semitones > 0 ? `+${semitones}` : semitones}
+            </span>
+            <button
+              onClick={() => setSemitones((s) => Math.min(6, s + 1))}
+              className="px-2.5 py-1.5 text-gray-300 active:bg-white/10 font-black"
+              aria-label="Subir tono"
+            >
+              ▲
+            </button>
+          </div>
+
+          {/* Zoom A− / A+ */}
+          <div className="shrink-0 flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden">
+            <button
+              onClick={() => changeSize(-2)}
+              className="px-2.5 py-1.5 text-gray-300 active:bg-white/10 text-[11px] font-black"
+              aria-label="Letra más pequeña"
+            >
+              A−
+            </button>
+            <button
+              onClick={() => changeSize(2)}
+              className="px-2.5 py-1.5 text-gray-300 active:bg-white/10 text-[13px] font-black border-l border-white/10"
+              aria-label="Letra más grande"
+            >
+              A+
+            </button>
+          </div>
+
+          {/* Acordes on/off */}
+          <button
+            onClick={() => setShowChords(!showChords)}
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-colors ${showChords ? 'bg-primary/10 border-primary/40 text-primary' : 'bg-white/5 border-white/10 text-gray-400'}`}
+          >
+            {showChords ? 'Con acordes' : 'Solo letra'}
+          </button>
+        </div>
+
+        {/* ── Reproductor tipo MP3 (YouTube oculto) ── */}
+        {videoId && (
+          <div className="px-3 pb-2">
+            <div className="flex items-center gap-3 bg-white/[0.05] border border-white/10 rounded-lg px-3 py-2">
+              <img
+                src={`https://img.youtube.com/vi/${videoId}/default.jpg`}
+                className="w-9 h-9 rounded-lg object-cover shrink-0"
+                alt=""
+              />
+              <button
+                onClick={() => seekBy(-10)}
+                className="shrink-0 p-1.5 text-gray-400 active:text-white"
+                aria-label="Atrás 10s"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M11.5,12L20,18V6M11,18V6L2.5,12L11,18Z" />
+                </svg>
+              </button>
+              <button
+                onClick={togglePlay}
+                disabled={!player}
+                className="shrink-0 w-11 h-11 rounded-full bg-primary text-black flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
+                aria-label={playing ? 'Pausar' : 'Reproducir'}
+              >
+                {playing ? (
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 ml-0.5" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                  </svg>
+                )}
+              </button>
+              <button
+                onClick={() => seekBy(10)}
+                className="shrink-0 p-1.5 text-gray-400 active:text-white"
+                aria-label="Adelante 10s"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M13,12L4.5,6V18M12.5,6V18L21,12L12.5,6Z" />
+                </svg>
+              </button>
+              <input
+                type="range"
+                min="0"
+                max={Math.max(1, Math.floor(dur))}
+                value={Math.floor(cur)}
+                onChange={(e) => seekTo(parseInt(e.target.value, 10))}
+                className="flex-1 min-w-0 accent-[#FBAE00] h-1.5"
+                aria-label="Progreso"
+              />
+              <span className="shrink-0 text-[10px] font-mono text-gray-400 tabular-nums">
+                {fmtTime(cur)} / {fmtTime(dur)}
+              </span>
+              <button
+                onClick={() => setShowVideo((v) => !v)}
+                className={`shrink-0 p-1.5 rounded-md ${showVideo ? 'text-primary' : 'text-gray-500'} active:text-white`}
+                title="Mostrar / ocultar video"
+                aria-label="Mostrar video"
+              >
+                <svg className="w-4.5 h-4.5 w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"
+                  />
+                </svg>
+              </button>
+            </div>
+            {/* El iframe SIEMPRE está montado (controla el audio); visible solo si
+                el usuario expande el video, si no queda en 1px (sin coste visual). */}
+            <div
+              className={
+                showVideo
+                  ? 'mt-2 aspect-video w-full max-w-xl mx-auto rounded-lg overflow-hidden bg-black'
+                  : 'absolute w-px h-px overflow-hidden opacity-0 pointer-events-none'
+              }
+            >
+              <div id="singer-audio-player" className="w-full h-full" />
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* ── Letra ── */}
+      <main
+        className="flex-1 overflow-y-auto px-5 md:px-10 py-6 custom-scrollbar"
+        style={{ paddingBottom: 'calc(3rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div
+          className={`lyrics-view max-w-3xl mx-auto text-gray-200 ${showChords ? '' : 'no-chords'}`}
+          style={{ fontSize: `${lyricSize}px` }}
+        >
+          {renderedLyrics}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default SingerView;

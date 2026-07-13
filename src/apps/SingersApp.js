@@ -2,10 +2,9 @@ import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useData } from '../hooks/useData';
 import { extractYoutubeVideoId } from '../utils/youtube';
 
-// El PlayerModal ya trae TODO lo que un cantante necesita: letra grande con
-// zoom A−/A+, transposición de tono, metrónomo y la canción (YouTube). Aquí
-// solo construimos una portada simple y sin distracciones para llegar a él.
-const PlayerModal = lazy(() => import('../components/PlayerModal'));
+// Vista de letra dedicada estilo LivePads (ligera): toolbar tono/BPM/transpose/
+// A±/acordes + reproductor compacto tipo MP3 (YouTube oculto) + letra fullscreen.
+const SingerView = lazy(() => import('../components/SingerView'));
 
 const norm = (t) =>
   (t || '')
@@ -67,13 +66,13 @@ const SingersApp = () => {
             placeholder="Buscar canción o artista…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary/50"
+            className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary/50"
           />
           {setlists.length > 0 && (
             <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
               <button
                 onClick={() => setSetlistId(null)}
-                className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-colors ${!setlistId ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
+                className={`shrink-0 px-4 py-2 rounded-md text-xs font-bold border transition-colors ${!setlistId ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
               >
                 Todas
               </button>
@@ -81,7 +80,7 @@ const SingersApp = () => {
                 <button
                   key={sl.id}
                   onClick={() => setSetlistId(sl.id)}
-                  className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-colors ${setlistId === sl.id ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
+                  className={`shrink-0 px-4 py-2 rounded-md text-xs font-bold border transition-colors ${setlistId === sl.id ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
                 >
                   {sl.name}
                 </button>
@@ -112,14 +111,14 @@ const SingersApp = () => {
               <button
                 key={song.id || song._id}
                 onClick={() => setSelected(song)}
-                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/5 active:scale-[0.98] active:bg-white/[0.08] transition-[transform,background-color] text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-lg bg-white/[0.04] border border-white/5 active:scale-[0.98] active:bg-white/[0.08] transition-[transform,background-color] text-left"
               >
                 {activeSetlist && (
                   <span className="w-6 text-center text-primary font-black text-sm shrink-0">
                     {idx + 1}
                   </span>
                 )}
-                <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 shrink-0">
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 shrink-0">
                   {vId ? (
                     <img
                       src={`https://img.youtube.com/vi/${vId}/default.jpg`}
@@ -166,7 +165,11 @@ const SingersApp = () => {
             </div>
           }
         >
-          <PlayerModal song={selected} onClose={() => setSelected(null)} />
+          <SingerView
+            song={selected}
+            videoId={extractYoutubeVideoId(selected.youtubeUrl)}
+            onClose={() => setSelected(null)}
+          />
         </Suspense>
       )}
     </div>

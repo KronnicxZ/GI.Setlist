@@ -102,7 +102,7 @@ const ProductionApp = () => {
           </div>
           <button
             onClick={handleCopyAll}
-            className="px-3 py-2 rounded-xl bg-primary/10 text-primary border border-primary/25 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-transform"
+            className="px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/25 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-transform"
           >
             Copiar todo
           </button>
@@ -114,12 +114,12 @@ const ProductionApp = () => {
             placeholder="Buscar canción o artista…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary/50"
+            className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary/50"
           />
           <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
             <button
               onClick={() => setSetlistId(null)}
-              className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-colors ${!setlistId ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
+              className={`shrink-0 px-4 py-2 rounded-md text-xs font-bold border transition-colors ${!setlistId ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
             >
               Todas
             </button>
@@ -127,14 +127,14 @@ const ProductionApp = () => {
               <button
                 key={sl.id}
                 onClick={() => setSetlistId(sl.id)}
-                className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-colors ${setlistId === sl.id ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
+                className={`shrink-0 px-4 py-2 rounded-md text-xs font-bold border transition-colors ${setlistId === sl.id ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
               >
                 {sl.name}
               </button>
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5">
+            <div className="flex rounded-lg overflow-hidden border border-white/10 bg-white/5">
               <button
                 onClick={() => setKeepSections(true)}
                 className={`px-4 py-2 text-[11px] font-bold transition-colors ${keepSections ? 'bg-primary text-black' : 'text-gray-400'}`}
@@ -174,7 +174,7 @@ const ProductionApp = () => {
             return (
               <div
                 key={id}
-                className="rounded-2xl bg-white/[0.04] border border-white/5 overflow-hidden"
+                className="rounded-lg bg-white/[0.04] border border-white/5 overflow-hidden"
               >
                 <div className="flex items-center gap-3 p-3">
                   {activeSetlist && (
@@ -192,14 +192,14 @@ const ProductionApp = () => {
                   <button
                     onClick={() => setOpenId(isOpen ? null : id)}
                     disabled={!clean}
-                    className="px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-[11px] font-bold disabled:opacity-30 active:scale-95 transition-transform"
+                    className="px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-[11px] font-bold disabled:opacity-30 active:scale-95 transition-transform"
                   >
                     {isOpen ? 'Ocultar' : 'Ver'}
                   </button>
                   <button
                     onClick={() => handleCopySong(song)}
                     disabled={!clean}
-                    className="px-4 py-2.5 rounded-xl bg-primary text-black text-[11px] font-black uppercase tracking-wide disabled:opacity-30 active:scale-95 transition-transform"
+                    className="px-4 py-2.5 rounded-lg bg-primary text-black text-[11px] font-black uppercase tracking-wide disabled:opacity-30 active:scale-95 transition-transform"
                   >
                     Copiar
                   </button>

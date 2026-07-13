@@ -189,6 +189,8 @@ input[type='number'] {
   font-size: 17px;
 }
 
+/* Acordes al estilo LivePads: texto en acento, limpio, SIN cajita — el acorde
+   "flota" encima de la línea (chord-wrapper) o inline, como en la app madre. */
 .lyrics-view .chord {
   color: var(--primary) !important;
   font-weight: 700;
@@ -197,12 +199,15 @@ input[type='number'] {
     -apple-system,
     system-ui,
     sans-serif;
-  background: rgba(251, 174, 0, 0.08);
-  padding: 0 4px;
+  background: transparent;
+  padding: 0 2px;
   margin: 0 1px;
-  border-radius: 4px;
   display: inline-block;
-  border-bottom: 2px solid rgba(251, 174, 0, 0.2);
+}
+
+/* Ocultar acordes (toggle "Solo letra") sin re-parsear el HTML. */
+.lyrics-view.no-chords .chord {
+  display: none;
 }
 
 .lyrics-view .chord-wrapper {
@@ -224,22 +229,25 @@ input[type='number'] {
   color: var(--primary) !important;
 }
 
+/* Etiqueta de sección al estilo LivePads: PÍLDORA de acento con texto oscuro
+   ("VERSO 1", "CORO"), como en la pantalla de letra de la app madre. En em
+   para que escale con el zoom A−/A+. */
 .lyrics-view .section-label {
-  color: #60a5fa !important;
+  color: #0a0a0a !important;
+  background: var(--primary);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  display: flex;
+  letter-spacing: 0.15em;
+  display: inline-flex;
   align-items: center;
-  margin-top: 1.5em;
-  margin-bottom: 0.8em;
-  /* En em (no rem): el título de sección escala CON el zoom de letra y ya no
-     queda más pequeño que el texto que encabeza (jerarquía invertida). */
-  font-size: 0.85em;
-  padding-left: 12px;
-  border-left: 3px solid #60a5fa;
-  background: transparent;
-  /* Eliminado el fondo doble */
+  width: fit-content;
+  margin-top: 1.6em;
+  margin-bottom: 0.7em;
+  font-size: 0.68em;
+  line-height: 1;
+  padding: 0.45em 0.9em;
+  border-radius: 6px;
+  border-left: none;
 }
 
 /* Forzar que si una sección está sola en una línea, se vea bien */
