@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
@@ -6,18 +6,42 @@ import PublicSetlist from './components/PublicSetlist';
 import { AuthProvider } from './context/AuthContext';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
+// Vistas dedicadas (subdominios / rutas): lazy para que la app principal no
+// cargue su código y viceversa.
+const SingersApp = lazy(() => import('./apps/SingersApp'));
+const ProductionApp = lazy(() => import('./apps/ProductionApp'));
+
+const PageLoader = () => (
+  <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+    <div className="w-10 h-10 border-4 border-[#FBAE00]/30 border-t-[#FBAE00] rounded-full animate-spin" />
+  </div>
+);
+
+// La raíz "/" elige la app según el SUBDOMINIO: así cantantes.* y letras.*
+// abren directo su vista sin rutas que recordar. Las rutas /cantantes y
+// /produccion funcionan además en cualquier dominio (útil para probar antes
+// de configurar el DNS).
+const host = window.location.hostname;
+let HomeApp = App;
+if (/^(cantantes|singers)\./i.test(host)) HomeApp = SingersApp;
+else if (/^(letras|produccion|producción|production)\./i.test(host)) HomeApp = ProductionApp;
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route
-            path="/shared/:id"
-            element={<PublicSetlist apiUrl={process.env.REACT_APP_API_URL || '/api'} />}
-          />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<HomeApp />} />
+            <Route path="/cantantes" element={<SingersApp />} />
+            <Route path="/produccion" element={<ProductionApp />} />
+            <Route
+              path="/shared/:id"
+              element={<PublicSetlist apiUrl={process.env.REACT_APP_API_URL || '/api'} />}
+            />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   </React.StrictMode>
