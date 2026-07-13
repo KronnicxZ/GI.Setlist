@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
-import { useData } from '../hooks/useData';
+import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
+import { useTeamData, orderSetlists, isSetlistToday } from '../hooks/useTeamData';
 import { extractYoutubeVideoId } from '../utils/youtube';
 
 // Vista de letra dedicada estilo LivePads (ligera): toolbar tono/BPM/transpose/
@@ -15,7 +15,7 @@ const norm = (t) =>
 
 const SingersApp = () => {
   const API_URL = process.env.REACT_APP_API_URL || '/api';
-  const { songs, setlists, loading } = useData(API_URL);
+  const { songs, setlists, loading } = useTeamData(API_URL);
   const [query, setQuery] = useState('');
   const [setlistId, setSetlistId] = useState(null); // null = todas
   const [selected, setSelected] = useState(null);
@@ -23,6 +23,18 @@ const SingersApp = () => {
   useEffect(() => {
     document.title = 'GI Cantantes — Letras y Tono';
   }, []);
+
+  const orderedSetlists = useMemo(() => orderSetlists(setlists), [setlists]);
+
+  // La lista de HOY se selecciona sola la primera vez (lo que un cantante
+  // busca el domingo, sin tocar nada). Si el usuario elige otra, se respeta.
+  const autoSel = useRef(false);
+  useEffect(() => {
+    if (autoSel.current || !orderedSetlists.length) return;
+    const today = orderedSetlists.find((sl) => isSetlistToday(sl));
+    if (today) setSetlistId(today.id);
+    autoSel.current = true;
+  }, [orderedSetlists]);
 
   const activeSetlist = setlists.find((s) => s.id === setlistId) || null;
 
@@ -76,12 +88,17 @@ const SingersApp = () => {
               >
                 Todas
               </button>
-              {setlists.map((sl) => (
+              {orderedSetlists.map((sl) => (
                 <button
                   key={sl.id}
                   onClick={() => setSetlistId(sl.id)}
                   className={`shrink-0 px-4 py-2 rounded-md text-xs font-bold border transition-colors ${setlistId === sl.id ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
                 >
+                  {isSetlistToday(sl) && (
+                    <span className={`mr-1.5 text-[9px] font-black px-1 py-0.5 rounded ${setlistId === sl.id ? 'bg-black/20' : 'bg-primary text-black'}`}>
+                      HOY
+                    </span>
+                  )}
                   {sl.name}
                 </button>
               ))}
@@ -96,9 +113,20 @@ const SingersApp = () => {
         style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
       >
         {loading ? (
-          <div className="flex flex-col items-center py-24 space-y-4">
-            <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-            <p className="text-gray-500 text-sm">Cargando repertorio…</p>
+          <div className="space-y-2" aria-hidden="true">
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.04] border border-white/5 animate-pulse"
+              >
+                <div className="w-12 h-12 rounded-lg bg-white/10" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 w-2/3 rounded bg-white/10" />
+                  <div className="h-2.5 w-1/3 rounded bg-white/10" />
+                </div>
+                <div className="w-8 h-6 rounded bg-white/10" />
+              </div>
+            ))}
           </div>
         ) : visibleSongs.length === 0 ? (
           <p className="text-center text-gray-500 py-20 text-sm">

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useData } from '../hooks/useData';
+import { useTeamData, orderSetlists, isSetlistToday } from '../hooks/useTeamData';
 import { cleanLyricsForProjection, copyText } from '../utils/projection';
 import { showToast } from '../utils/toast';
 
@@ -16,7 +16,7 @@ const norm = (t) =>
 
 const ProductionApp = () => {
   const API_URL = process.env.REACT_APP_API_URL || '/api';
-  const { songs, setlists, loading } = useData(API_URL);
+  const { songs, setlists, loading } = useTeamData(API_URL);
   const [query, setQuery] = useState('');
   const [setlistId, setSetlistId] = useState(null);
   // Etiquetas de sección VISIBLES por defecto; un clic las quita. Se recuerda.
@@ -39,6 +39,7 @@ const ProductionApp = () => {
   }, []);
   const [openId, setOpenId] = useState(null); // vista previa expandida
 
+  const orderedSetlists = useMemo(() => orderSetlists(setlists), [setlists]);
   const activeSetlist = setlists.find((s) => s.id === setlistId) || null;
 
   const visibleSongs = useMemo(() => {
@@ -123,12 +124,17 @@ const ProductionApp = () => {
             >
               Todas
             </button>
-            {setlists.map((sl) => (
+            {orderedSetlists.map((sl) => (
               <button
                 key={sl.id}
                 onClick={() => setSetlistId(sl.id)}
                 className={`shrink-0 px-4 py-2 rounded-md text-xs font-bold border transition-colors ${setlistId === sl.id ? 'bg-primary text-black border-primary' : 'bg-white/5 text-gray-400 border-white/10'}`}
               >
+                {isSetlistToday(sl) && (
+                  <span className={`mr-1.5 text-[9px] font-black px-1 py-0.5 rounded ${setlistId === sl.id ? 'bg-black/20' : 'bg-primary text-black'}`}>
+                    HOY
+                  </span>
+                )}
                 {sl.name}
               </button>
             ))}
