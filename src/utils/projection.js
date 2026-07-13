@@ -18,6 +18,13 @@ const SECTION_LINE_RE = new RegExp(
   `^\\s*\\[?\\s*${SECTION_WORDS}(?:\\s+[ivx0-9]+)?\\s*\\]?\\s*:?\\s*$`,
   'i'
 );
+// Encabezado de sección AL INICIO de una línea con más contenido detrás
+// (p. ej. "INTRO: A - D - A - F#m"): captura la etiqueta y deja el resto para
+// analizarlo aparte (si el resto son acordes, se descarta).
+const SECTION_PREFIX_RE = new RegExp(
+  `^\\s*\\[?\\s*(${SECTION_WORDS}(?:\\s+[ivx0-9]+)?)\\s*\\]?\\s*:\\s*(.*)$`,
+  'i'
+);
 
 // Nota/acorde suelto (sin corchetes): C, F#m7, Bb/D, Asus4, C#m7b5, DO#m…
 const CHORD_WORD_RE =
@@ -38,6 +45,35 @@ function isChordOnlyLine(line) {
     else return false; // hay una palabra real → es letra
   }
   return chordish > 0;
+}
+
+// Quita una COLA de acordes pegada al final de una línea de letra
+// (p. ej. "Esperándote a ti F#m - E - D - A" → "Esperándote a ti").
+// Conservador para no comerse letra real: la cola debe tener ≥2 tokens de
+// acorde consecutivos y al menos uno inequívoco (con #/b/m/número/bajo) o un
+// guion separador — así "vuelvo a Ti" o un "A" suelto nunca se recortan.
+function stripTrailingChordRun(line) {
+  const tokens = line.split(/\s+/);
+  let i = tokens.length;
+  while (i > 0) {
+    const tk = tokens[i - 1];
+    if (CHORD_WORD_RE.test(tk) || /^[-–—|/]+$/.test(tk) || /^x\d+$/i.test(tk)) i--;
+    else break;
+  }
+  const run = tokens.slice(i);
+  const chordTokens = run.filter((tk) => CHORD_WORD_RE.test(tk));
+  const hasStrongChord = run.some((tk) => /[#bmM0-9/]/.test(tk) && CHORD_WORD_RE.test(tk));
+  const hasSeparator = run.some((tk) => /^[-–—|/]+$/.test(tk));
+  if (i > 0 && chordTokens.length >= 2 && (hasStrongChord || hasSeparator)) {
+    return tokens.slice(0, i).join(' ').replace(/[ \t]+$/, '');
+  }
+  return line;
+}
+
+// Normaliza una etiqueta de sección para mostrarla clara y compatible con
+// Holyrics: "[CORO 2]", "[INTRO]".
+function formatSectionLabel(label) {
+  return `[${label.replace(/[[\]:]/g, '').trim().toUpperCase()}]`;
 }
 
 // HTML (Quill) → texto plano con \n. Idéntico criterio que LivePads.
@@ -62,40 +98,78 @@ function htmlToPlain(html) {
 /**
  * Devuelve la letra lista para pegar en Holyrics.
  * @param {string} lyrics  letra cruda (HTML o texto plano)
- * @param {{keepSections?: boolean}} opts  conservar etiquetas de sección (default: false)
+ * @param {{keepSections?: boolean}} opts  conservar etiquetas de sección
+ *   como "[CORO]" (default: TRUE — se quitan con la opción, no al revés)
  */
 export function cleanLyricsForProjection(lyrics, opts = {}) {
   if (!lyrics) return '';
-  const keepSections = !!opts.keepSections;
+  const keepSections = opts.keepSections !== false; // default: etiquetas visibles
 
   let text = htmlToPlain(String(lyrics));
 
   const out = [];
+  // Tras una etiqueta, se "tragan" las líneas en blanco del original para que
+  // la etiqueta encabece su bloque (y no quede como diapositiva suelta).
+  let afterLabel = false;
+  const pushLabel = (label) => {
+    out.push('');
+    out.push(formatSectionLabel(label));
+    afterLabel = true;
+  };
+  const pushLine = (l) => {
+    out.push(l);
+    if (l) afterLabel = false;
+  };
+
   for (const raw of text.split('\n')) {
-    // 1) fuera acordes entre corchetes (inline o en su línea)
+    const rawTrim = raw.trim();
+
+    // 1) fuera acordes entre corchetes (inline o en su línea) — pero OJO: si el
+    //    corchete es una sección ([CORO]), la maneja el paso 2 sobre `raw`.
     let line = raw.replace(/\[[^\]]*\]/g, ' ');
     line = line.replace(/[ \t]+/g, ' ').replace(/^[ \t]+|[ \t]+$/g, '');
 
-    // 2) línea de sección: se conserva normalizada o se convierte en corte
-    if (SECTION_LINE_RE.test(raw.trim()) || (line && SECTION_LINE_RE.test(line))) {
-      if (keepSections) {
-        const label = (line || raw).replace(/[[\]:]/g, '').trim().toUpperCase();
-        out.push('');
-        out.push(label);
-      } else {
-        out.push(''); // la sección desaparece pero garantiza el salto de diapositiva
+    // 2) línea que ES una sección ("[CORO]", "VERSO 1:", "Intro")
+    if (SECTION_LINE_RE.test(rawTrim) || (line && SECTION_LINE_RE.test(line))) {
+      if (keepSections) pushLabel(line || rawTrim);
+      else pushLine(''); // la sección desaparece pero garantiza el salto de bloque
+      continue;
+    }
+
+    // 2b) sección CON contenido detrás ("INTRO: A - D - A - F#m"): etiqueta
+    //     aparte; el resto solo sobrevive si es letra real (no cifrado).
+    const prefixMatch = (line || rawTrim).match(SECTION_PREFIX_RE);
+    if (prefixMatch) {
+      const [, label, rest] = prefixMatch;
+      if (keepSections) pushLabel(label);
+      else pushLine('');
+      const restClean = rest.trim();
+      if (restClean && !isChordOnlyLine(restClean)) {
+        pushLine(stripTrailingChordRun(restClean));
       }
       continue;
     }
 
-    // 3) línea que era solo acordes (con o sin corchetes) → fuera
+    // 3) línea en blanco DEL AUTOR → corte de bloque (salvo justo tras una
+    //    etiqueta, para no separarla de su letra). Una línea que quedó vacía
+    //    por quitarle los [acordes] NO es un corte: era una línea de cifrado.
     if (!line) {
-      out.push('');
+      if (rawTrim === '') {
+        if (!afterLabel) out.push('');
+      }
       continue;
     }
     if (isChordOnlyLine(line)) continue;
 
-    out.push(line);
+    // 4) letra con cola de acordes al final → recorta la cola. Si lo que queda
+    //    es una etiqueta ("INTRO A - D - A - F#m" sin dos puntos), trátala como tal.
+    const stripped = stripTrailingChordRun(line);
+    if (SECTION_LINE_RE.test(stripped)) {
+      if (keepSections) pushLabel(stripped);
+      else pushLine('');
+      continue;
+    }
+    pushLine(stripped);
   }
 
   return out
