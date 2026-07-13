@@ -38,7 +38,11 @@ export const useData = (apiUrl) => {
     fetchData();
   }, [fetchData]);
 
-  const saveSong = async (songData, editingId = null) => {
+  // Mutadores estabilizados con useCallback: sin esto se recreaban en cada
+  // render de App y rompían el memo() de SongList/SongCard (toda la lista se
+  // re-renderizaba al tipear en el buscador).
+  const saveSong = useCallback(
+    async (songData, editingId = null) => {
     const url = editingId ? `${apiUrl}/songs/${editingId}` : `${apiUrl}/songs`;
     const method = editingId ? 'PUT' : 'POST';
     const response = await fetch(url, {
@@ -59,9 +63,12 @@ export const useData = (apiUrl) => {
       setSongs((prev) => [...prev, formattedSong]);
     }
     return formattedSong;
-  };
+    },
+    [apiUrl]
+  );
 
-  const deleteSong = async (idOrIds) => {
+  const deleteSong = useCallback(
+    async (idOrIds) => {
     const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
     for (const id of ids) {
       const res = await fetch(`${apiUrl}/songs/${id}`, {
@@ -71,9 +78,12 @@ export const useData = (apiUrl) => {
       if (!res.ok) throw new Error('No se pudo eliminar la canción');
     }
     setSongs((prev) => prev.filter((s) => !ids.includes(s.id)));
-  };
+    },
+    [apiUrl]
+  );
 
-  const saveSetlist = async (setlistData, editingId = null) => {
+  const saveSetlist = useCallback(
+    async (setlistData, editingId = null) => {
     const url = editingId ? `${apiUrl}/setlists/${editingId}` : `${apiUrl}/setlists`;
     const method = editingId ? 'PUT' : 'POST';
     const response = await fetch(url, {
@@ -94,18 +104,24 @@ export const useData = (apiUrl) => {
       setSetlists((prev) => [...prev, formattedSetlist]);
     }
     return formattedSetlist;
-  };
+    },
+    [apiUrl]
+  );
 
-  const deleteSetlist = async (id) => {
+  const deleteSetlist = useCallback(
+    async (id) => {
     const res = await fetch(`${apiUrl}/setlists/${id}`, {
       method: 'DELETE',
       headers: adminAuthHeaders(),
     });
     if (!res.ok) throw new Error('No se pudo eliminar el setlist');
     setSetlists((prev) => prev.filter((s) => s.id !== id));
-  };
+    },
+    [apiUrl]
+  );
 
-  const addToSetlist = async (songIdOrIds, setlistId) => {
+  const addToSetlist = useCallback(
+    async (songIdOrIds, setlistId) => {
     const idsToAdd = Array.isArray(songIdOrIds) ? songIdOrIds : [songIdOrIds];
     const setlist = setlists.find((l) => l.id === setlistId);
     if (!setlist) return;
@@ -133,9 +149,12 @@ export const useData = (apiUrl) => {
 
     setSetlists((prev) => prev.map((s) => (s.id === setlistId ? updated : s)));
     return updated;
-  };
+    },
+    [apiUrl, setlists, songs]
+  );
 
-  const removeFromSetlist = async (idOrIds, setlistId) => {
+  const removeFromSetlist = useCallback(
+    async (idOrIds, setlistId) => {
     const idsToRemove = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
     const setlist = setlists.find((l) => l.id === setlistId);
     if (!setlist) return;
@@ -156,7 +175,9 @@ export const useData = (apiUrl) => {
 
     setSetlists((prev) => prev.map((s) => (s.id === setlistId ? updated : s)));
     return updated;
-  };
+    },
+    [apiUrl, setlists]
+  );
 
   return {
     songs,

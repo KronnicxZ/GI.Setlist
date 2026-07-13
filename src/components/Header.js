@@ -1,4 +1,5 @@
 import React from 'react';
+import { showToast } from '../utils/toast';
 import SearchBar from './SearchBar';
 import SortFilter from './SortFilter';
 
@@ -53,7 +54,7 @@ const Header = ({
                     onClick={() => {
                       const shareUrl = `${window.location.origin}/shared/${selectedSetlist.id || selectedSetlist._id}`;
                       navigator.clipboard.writeText(shareUrl);
-                      alert('Enlace de Setlist copiado al portapapeles. ¡Compártelo con tu banda!');
+                      showToast('Enlace copiado. ¡Compártelo con tu banda!');
                     }}
                     className="flex items-center space-x-2 text-xs font-bold text-gray-400 bg-white/5 px-4 py-2 rounded-full border border-white/10 hover:bg-white/10 transition-all no-print"
                   >
@@ -154,7 +155,7 @@ const Header = ({
                   onClick={() => {
                     const shareUrl = `${window.location.origin}/shared/${selectedSetlist.id || selectedSetlist._id}`;
                     navigator.clipboard.writeText(shareUrl);
-                    alert('Enlace de Setlist copiado al portapapeles');
+                    showToast('Enlace de Setlist copiado al portapapeles');
                   }}
                   className="p-2 text-gray-400 bg-white/5 border border-white/10 rounded-lg active:bg-white/10 active:scale-95 transition-transform"
                 >

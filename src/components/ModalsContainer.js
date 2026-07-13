@@ -1,13 +1,26 @@
-import React from 'react';
-import PlayerModal from './PlayerModal';
-import SongForm from './SongForm';
-import SetlistForm from './SetlistForm';
+import React, { lazy, Suspense } from 'react';
 import LoginModal from './LoginModal';
 import ConfirmationModal from './ConfirmationModal';
 import DuplicateModal from './DuplicateModal';
-import AdminPanel from './AdminPanel';
 import CustomAlert from './CustomAlert';
-import ChatAI from './tools/ChatAI';
+
+// Modales pesados con code-splitting: PlayerModal arrastra Tone.js + la BD de
+// acordes + html2canvas, y SongForm arrastra react-quill. Con lazy() salen del
+// bundle inicial → el listado carga y responde mucho antes (sobre todo en
+// móvil); cada chunk se descarga la primera vez que se abre ese modal.
+const PlayerModal = lazy(() => import('./PlayerModal'));
+const SongForm = lazy(() => import('./SongForm'));
+const SetlistForm = lazy(() => import('./SetlistForm'));
+const AdminPanel = lazy(() => import('./AdminPanel'));
+const ChatAI = lazy(() => import('./tools/ChatAI'));
+
+// Fallback mientras baja el chunk del modal: velo + spinner centrado (feedback
+// inmediato al tocar una canción, en vez de un instante de "no pasó nada").
+const ModalLoader = () => (
+  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60">
+    <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+  </div>
+);
 
 const ModalsContainer = ({
   selectedSong,
@@ -55,31 +68,33 @@ const ModalsContainer = ({
 }) => {
   return (
     <>
-      {/* Modals & Forms */}
-      {selectedSong && <PlayerModal song={selectedSong} onClose={() => setSelectedSong(null)} />}
+      {/* Modals & Forms (pesados → lazy, envueltos en Suspense) */}
+      <Suspense fallback={<ModalLoader />}>
+        {selectedSong && <PlayerModal song={selectedSong} onClose={() => setSelectedSong(null)} />}
 
-      {showSongForm && isAdmin && (
-        <SongForm
-          initialData={editingSong}
-          onSubmit={handleSaveSong}
-          onCancel={() => {
-            setShowSongForm(false);
-            setEditingSong(null);
-          }}
-        />
-      )}
+        {showSongForm && isAdmin && (
+          <SongForm
+            initialData={editingSong}
+            onSubmit={handleSaveSong}
+            onCancel={() => {
+              setShowSongForm(false);
+              setEditingSong(null);
+            }}
+          />
+        )}
 
-      {showSetlistForm && isAdmin && (
-        <SetlistForm
-          songs={songs}
-          initialData={editingSetlist}
-          onSubmit={handleSaveSetlist}
-          onCancel={() => {
-            setShowSetlistForm(false);
-            setEditingSetlist(null);
-          }}
-        />
-      )}
+        {showSetlistForm && isAdmin && (
+          <SetlistForm
+            songs={songs}
+            initialData={editingSetlist}
+            onSubmit={handleSaveSetlist}
+            onCancel={() => {
+              setShowSetlistForm(false);
+              setEditingSetlist(null);
+            }}
+          />
+        )}
+      </Suspense>
 
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
 
@@ -118,12 +133,14 @@ const ModalsContainer = ({
       )}
 
       {showAdminPanel && isAdmin && (
-        <AdminPanel
-          onClose={() => setShowAdminPanel(false)}
-          onBackup={handleBackup}
-          onRestore={handleRestore}
-          onLogout={logout}
-        />
+        <Suspense fallback={<ModalLoader />}>
+          <AdminPanel
+            onClose={() => setShowAdminPanel(false)}
+            onBackup={handleBackup}
+            onRestore={handleRestore}
+            onLogout={logout}
+          />
+        </Suspense>
       )}
 
       <CustomAlert
@@ -185,7 +202,15 @@ const ModalsContainer = ({
                 />
               </svg>
             </button>
-            <ChatAI isPopup={true} />
+            <Suspense
+              fallback={
+                <div className="w-full h-full flex items-center justify-center bg-[#141414] rounded-2xl border border-white/10">
+                  <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                </div>
+              }
+            >
+              <ChatAI isPopup={true} />
+            </Suspense>
           </div>
         </div>
       )}

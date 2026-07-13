@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gi-setlist-v5-pwa';
+const CACHE_NAME = 'gi-setlist-v6-pwa';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -29,8 +29,29 @@ self.addEventListener('fetch', event => {
     // viejos tras estar offline causaba canciones/setlists desactualizados).
     if (url.pathname.startsWith('/api/')) return; // network-only para la API
 
+    // Cache-First para los bundles hasheados de CRA (/static/js|css|media): el
+    // nombre de archivo lleva hash de contenido, así que son INMUTABLES — si
+    // están en caché, servirlos sin tocar la red hace la recarga casi
+    // instantánea. Un deploy nuevo cambia el hash → es otra URL → se descarga.
+    if (url.origin === self.location.origin && url.pathname.startsWith('/static/')) {
+        event.respondWith(
+            caches.match(request).then(cached => {
+                if (cached) return cached;
+                return fetch(request).then(response => {
+                    if (response && response.status === 200) {
+                        const responseToCache = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(request, responseToCache));
+                    }
+                    return response;
+                });
+            })
+        );
+        return;
+    }
+
     event.respondWith(
-        // Network-First para assets estáticos: red primero, caché como fallback.
+        // Network-First para el resto (index.html, iconos): red primero para no
+        // servir un shell viejo, caché como fallback offline.
         fetch(request)
             .then(response => {
                 if (response && response.status === 200 && url.origin === self.location.origin) {

@@ -10,6 +10,9 @@ module.exports = {
           DEFAULT: '#FBAE00',
           hover: '#ffc03d',
         },
+        // `main` faltaba: componentes como MobileNav ya usaban `bg-main/60` y
+        // Tailwind lo ignoraba en silencio (sin fondo). Ahora existe.
+        main: 'var(--bg-main)',
         surface: 'var(--bg-surface)',
         sidebar: 'var(--bg-sidebar)',
         card: 'var(--bg-card)',

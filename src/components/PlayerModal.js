@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import * as Tone from 'tone';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import parse from 'html-react-parser';
 import * as Popover from '@radix-ui/react-popover';
 import Chord from '@tombatossals/react-chords/lib/Chord';
@@ -7,7 +6,26 @@ import guitarDb from '@tombatossals/chords-db/lib/guitar.json';
 import { transposeText, formatLyricsForDisplay, NOTES } from '../utils/chordTransposer';
 import { useAuth } from '../context/AuthContext';
 import { extractYoutubeVideoId } from '../utils/youtube';
-import html2canvas from 'html2canvas';
+import { showToast } from '../utils/toast';
+
+// Tone.js (~grande) y html2canvas se cargan BAJO DEMANDA (import() dinámico):
+// Tone solo cuando el usuario inicia el metrónomo, html2canvas solo al capturar.
+// Antes venían en el chunk del modal y encendían el AudioContext al abrir
+// cualquier canción — coste innecesario en móvil.
+
+// Zoom de letra persistido (uso en escenario): 14–30px, por usuario.
+const LYRIC_SIZE_KEY = 'gis.lyricSize';
+const LYRIC_SIZE_MIN = 14;
+const LYRIC_SIZE_MAX = 30;
+const readLyricSize = () => {
+  try {
+    const n = parseInt(localStorage.getItem(LYRIC_SIZE_KEY), 10);
+    if (Number.isFinite(n)) return Math.min(LYRIC_SIZE_MAX, Math.max(LYRIC_SIZE_MIN, n));
+  } catch (e) {
+    /* sin storage */
+  }
+  return 17;
+};
 
 const PlayerModal = ({ song, onClose }) => {
   const { isAdmin } = useAuth();
@@ -26,12 +44,26 @@ const PlayerModal = ({ song, onClose }) => {
   const [playerState, setPlayerState] = useState(-1);
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [lyricSize, setLyricSize] = useState(readLyricSize);
   const scrollContainerRef = useRef(null);
   const timeIntervalRef = useRef(null);
 
+  const toneRef = useRef(null); // módulo Tone.js (cargado al primer uso)
   const synth = useRef(null);
   const repeatId = useRef(null);
   const beatCounter = useRef(0);
+
+  const changeLyricSize = (delta) => {
+    setLyricSize((prev) => {
+      const next = Math.min(LYRIC_SIZE_MAX, Math.max(LYRIC_SIZE_MIN, prev + delta));
+      try {
+        localStorage.setItem(LYRIC_SIZE_KEY, String(next));
+      } catch (e) {
+        /* sin storage */
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (song?.lyrics) {
@@ -45,21 +77,11 @@ const PlayerModal = ({ song, onClose }) => {
     setBpm(Number(song?.bpm) || 120);
   }, [song]);
 
-  // Metronome Sound Setup (Crisp Woodblock Click)
+  // Limpieza al desmontar (solo si Tone llegó a cargarse/usarse).
   useEffect(() => {
-    synth.current = new Tone.MembraneSynth({
-      pitchDecay: 0.001,
-      octaves: 1,
-      oscillator: { type: 'sine' },
-      envelope: {
-        attack: 0.001,
-        decay: 0.1,
-        sustain: 0,
-        release: 0.1,
-      },
-    }).toDestination();
-
     return () => {
+      const Tone = toneRef.current;
+      if (!Tone) return;
       if (synth.current) synth.current.dispose();
       Tone.getTransport().stop();
       Tone.getTransport().cancel();
@@ -68,11 +90,14 @@ const PlayerModal = ({ song, onClose }) => {
 
   // Update BPM in real-time without stopping
   useEffect(() => {
-    Tone.getTransport().bpm.value = bpm;
+    if (toneRef.current) toneRef.current.getTransport().bpm.value = bpm;
   }, [bpm]);
 
   // Metronome Logic - Control Start/Stop and measure changes
   useEffect(() => {
+    const Tone = toneRef.current;
+    if (!Tone) return; // aún sin usar el metrónomo: nada que arrancar/parar
+
     if (isPlaying) {
       const beatsPerMeasure = parseInt(timeSignature.split('/')[0]);
 
@@ -115,50 +140,85 @@ const PlayerModal = ({ song, onClose }) => {
   }, [isPlaying, timeSignature]);
 
   const toggleMetronome = async () => {
-    if (Tone.getContext().state !== 'running') {
-      await Tone.start();
+    if (!isPlaying) {
+      // Carga diferida: Tone.js entra al navegador SOLO la primera vez que se
+      // usa el metrónomo, y el AudioContext se enciende en el gesto del usuario
+      // (obligatorio en móvil y gratis para quien nunca lo usa).
+      if (!toneRef.current) {
+        toneRef.current = await import('tone');
+      }
+      const Tone = toneRef.current;
+      if (Tone.getContext().state !== 'running') {
+        await Tone.start();
+      }
+      if (!synth.current) {
+        synth.current = new Tone.MembraneSynth({
+          pitchDecay: 0.001,
+          octaves: 1,
+          oscillator: { type: 'sine' },
+          envelope: {
+            attack: 0.001,
+            decay: 0.1,
+            sustain: 0,
+            release: 0.1,
+          },
+        }).toDestination();
+      }
+      Tone.getTransport().bpm.value = bpm;
     }
     setIsPlaying(!isPlaying);
   };
 
   const videoId = extractYoutubeVideoId(song?.youtubeUrl);
 
-  // YouTube Player API Logic
+  // YouTube Player API Logic — usa el callback oficial de la API en vez de un
+  // setInterval de sondeo cada 500 ms.
   useEffect(() => {
     if (!videoId) return;
 
-    // Load API
-    if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    let cancelled = false;
+    const createPlayer = () => {
+      if (cancelled) return;
+      // Ensure we always use the same element ID for the master player
+      new window.YT.Player('master-youtube-player', {
+        height: '100%',
+        width: '100%',
+        videoId: videoId,
+        playerVars: {
+          autoplay: 0,
+          controls: 1,
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1,
+        },
+        events: {
+          onReady: (event) => setPlayer(event.target),
+          onStateChange: (event) => setPlayerState(event.data),
+        },
+      });
+    };
+
+    if (window.YT && window.YT.Player) {
+      createPlayer();
+    } else {
+      // Encadena con cualquier callback previo (por si otra vista también espera).
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (typeof prev === 'function') prev();
+        createPlayer();
+      };
+      if (!document.getElementById('yt-iframe-api')) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      }
     }
 
-    let interval = setInterval(() => {
-      if (window.YT && window.YT.Player) {
-        clearInterval(interval);
-        // Ensure we always use the same element ID for the master player
-        new window.YT.Player('master-youtube-player', {
-          height: '100%',
-          width: '100%',
-          videoId: videoId,
-          playerVars: {
-            autoplay: 0,
-            controls: 1,
-            rel: 0,
-            modestbranding: 1,
-            playsinline: 1,
-          },
-          events: {
-            onReady: (event) => setPlayer(event.target),
-            onStateChange: (event) => setPlayerState(event.data),
-          },
-        });
-      }
-    }, 500);
-
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+    };
   }, [videoId]);
 
   const handlePlayPause = () => {
@@ -192,9 +252,9 @@ const PlayerModal = ({ song, onClose }) => {
     const updateTime = () => {
       if (player && typeof player.getCurrentTime === 'function') {
         const time = player.getCurrentTime();
-        if (time !== currentTime) {
-          setCurrentTime(time);
-        }
+        // Solo re-renderiza cuando cambia el SEGUNDO visible (el display muestra
+        // m:ss); devolver el mismo valor hace que React se salte el render.
+        setCurrentTime((prev) => (Math.floor(prev) === Math.floor(time) ? prev : time));
       }
     };
 
@@ -342,7 +402,7 @@ const PlayerModal = ({ song, onClose }) => {
               <Popover.Portal>
                 <Popover.Content
                   side="top"
-                  className="bg-[#0a0a0a] p-4 rounded-2xl shadow-2xl z-[200] border border-white/10"
+                  className="bg-main p-4 rounded-2xl shadow-2xl z-[200] border border-white/10"
                   sideOffset={8}
                 >
                   <div className="flex flex-col items-center">
@@ -371,18 +431,23 @@ const PlayerModal = ({ song, onClose }) => {
     };
 
     return (
-      <div className="lyrics-view" id="lyrics-to-export">
+      <div className="lyrics-view" id="lyrics-to-export" style={{ fontSize: `${lyricSize}px` }}>
         {parse(transposedLyrics, options)}
       </div>
     );
   };
 
+  // parse() sobre toda la letra es caro; sin esto se re-ejecutaba en CADA
+  // re-render del modal (ticks del metrónomo y del reproductor incluidos).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const renderedLyrics = useMemo(renderLyrics, [transposedLyrics, showChords, lyricSize]);
+
   const downloadImage = async () => {
     const element = document.getElementById('lyrics-to-export-container');
     if (!element) return;
 
-    // Alerta visual para el usuario
-    const originalStyle = element.style.cssText;
+    // html2canvas solo se descarga la primera vez que alguien captura.
+    const { default: html2canvas } = await import('html2canvas');
 
     const canvas = await html2canvas(element, {
       backgroundColor: '#0a0a0a',
@@ -438,11 +503,11 @@ const PlayerModal = ({ song, onClose }) => {
         onScroll={handleScroll}
         className="bg-surface border-none md:border border-white/10 rounded-none md:rounded-main w-full max-w-6xl shadow-2xl relative overflow-y-auto overflow-x-hidden md:overflow-hidden flex flex-col md:flex-row h-full md:h-full md:max-h-[90vh] custom-scrollbar"
       >
-        <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="hidden md:block absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
         {/* Mobile Dynamic Master Player Container */}
         <div
-          className={`md:hidden sticky top-0 z-[60] transition-all duration-300 w-full ${isScrolled ? 'bg-surface/95 backdrop-blur-xl border-b border-white/10 py-1 shadow-2xl' : 'bg-[#0a0a0a]'}`}
+          className={`md:hidden sticky top-0 z-[60] transition-all duration-300 w-full ${isScrolled ? 'bg-surface/95 backdrop-blur-xl border-b border-white/10 py-1 shadow-2xl' : 'bg-main'}`}
         >
           {/* 1. Header Navigation (Always visible, small when scrolled) */}
           <div className={`px-4 flex items-center justify-between ${isScrolled ? 'py-1' : 'py-3'}`}>
@@ -461,23 +526,23 @@ const PlayerModal = ({ song, onClose }) => {
               className={`flex flex-col items-end text-right transition-all flex-1 ml-4 overflow-hidden ${isScrolled ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}
             >
               <div className="flex items-baseline space-x-2 justify-end mb-0.5">
-                <h3 className="text-[11px] font-black text-white truncate">{song.title}</h3>
-                <p className="text-primary text-[9px] font-bold truncate uppercase">
+                <h3 className="text-[13px] font-black text-white truncate">{song.title}</h3>
+                <p className="text-primary text-[11px] font-bold truncate uppercase">
                   {song.artist}
                 </p>
               </div>
               {/* Subtle Metadata Row - Integrated below titles */}
               <div className="flex items-center space-x-3 opacity-50">
                 <div className="flex items-center space-x-1">
-                  <span className="text-[8px] font-bold text-primary uppercase">K:</span>
-                  <span className="text-[9px] font-black text-white">{getCurrentKey()}</span>
+                  <span className="text-[10px] font-bold text-primary uppercase">K:</span>
+                  <span className="text-[11px] font-black text-white">{getCurrentKey()}</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <span className="text-[8px] font-bold text-primary uppercase">B:</span>
-                  <span className="text-[9px] font-black text-white">{song.bpm || '-'}</span>
+                  <span className="text-[10px] font-bold text-primary uppercase">B:</span>
+                  <span className="text-[11px] font-black text-white">{song.bpm || '-'}</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <span className="text-[9px] font-mono font-medium text-white">
+                  <span className="text-[10px] font-mono font-medium text-white">
                     {formatTime(currentTime)} / {player ? formatTime(player.getDuration()) : '-:-'}
                   </span>
                 </div>
@@ -646,7 +711,7 @@ const PlayerModal = ({ song, onClose }) => {
             {/* 1. Tono Original, Tono Actual */}
             <div className="grid grid-cols-2 gap-2 md:gap-3">
               <div className="bg-white/5 border border-white/5 p-3 md:p-4 rounded-sub flex flex-col items-center justify-center text-center">
-                <p className="text-[8px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                <p className="text-[10px] md:text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                   Tono Original
                 </p>
                 <div className="flex flex-col items-center">
@@ -654,21 +719,21 @@ const PlayerModal = ({ song, onClose }) => {
                     {song.originalKey || song.key || '-'}
                   </span>
                   {song.vocalistKey && (
-                    <span className="text-[7px] md:text-[8px] text-primary font-bold uppercase tracking-tighter">
+                    <span className="text-[10px] md:text-[11px] text-primary font-bold uppercase tracking-tighter">
                       Vocalista: {song.vocalistKey}
                     </span>
                   )}
                 </div>
               </div>
               <div className="bg-white/5 border border-white/5 p-3 md:p-4 rounded-sub flex flex-col items-center justify-center text-center">
-                <p className="text-[8px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                <p className="text-[10px] md:text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                   Tono Actual
                 </p>
                 <div className="flex flex-col items-center">
                   <span className="text-lg md:text-xl font-black text-primary leading-tight">
                     {newKey}
                   </span>
-                  <span className="text-[8px] md:text-[9px] text-gray-600 font-bold">
+                  <span className="text-[10px] md:text-[11px] text-gray-600 font-bold">
                     ({semitones >= 0 ? `+${semitones}` : semitones})
                   </span>
                 </div>
@@ -677,7 +742,7 @@ const PlayerModal = ({ song, onClose }) => {
 
             {/* 2. Transpose */}
             <div className="space-y-2 md:space-y-4 pt-4 border-t border-white/5">
-              <p className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-widest text-center">
+              <p className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest text-center">
                 Transponer Vista
               </p>
 
@@ -725,7 +790,7 @@ const PlayerModal = ({ song, onClose }) => {
                 </div>
                 <button
                   onClick={() => handleTranspose(0)}
-                  className="w-full py-2 rounded-xl bg-white/5 text-gray-500 text-[9px] font-bold uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all"
+                  className="w-full py-2 rounded-xl bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all"
                 >
                   Restaurar Original
                 </button>
@@ -734,7 +799,7 @@ const PlayerModal = ({ song, onClose }) => {
 
             {/* 3. BPM (Original) */}
             <div className="bg-white/5 border border-white/5 p-4 md:p-5 rounded-sub flex flex-col items-center justify-center text-center">
-              <p className="text-[8px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+              <p className="text-[10px] md:text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                 BPM Original
               </p>
               <p className="text-xl md:text-2xl font-black text-white tracking-widest">
@@ -759,7 +824,7 @@ const PlayerModal = ({ song, onClose }) => {
               )}
 
               <div className="w-full flex justify-between items-center mb-3 md:mb-4">
-                <p className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                <p className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                   Metrónomo
                 </p>
                 <div className="flex space-x-1.5 md:space-x-2">
@@ -779,7 +844,7 @@ const PlayerModal = ({ song, onClose }) => {
               <div className="flex items-center space-x-4 md:space-x-6 mb-3 md:mb-4">
                 <button
                   onClick={() => setBpm((prev) => Math.max(30, prev - 1))}
-                  className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-90"
+                  className="w-11 h-11 md:w-10 md:h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-90"
                 >
                   <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M19,13H5V11H19V13Z" />
@@ -789,13 +854,13 @@ const PlayerModal = ({ song, onClose }) => {
                   <span className="text-2xl md:text-4xl font-black text-white tracking-tighter">
                     {bpm}
                   </span>
-                  <span className="text-[7px] md:text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                  <span className="text-[10px] md:text-[11px] font-bold text-gray-500 uppercase tracking-widest">
                     BPM Ensayo
                   </span>
                 </div>
                 <button
                   onClick={() => setBpm((prev) => Math.min(300, prev + 1))}
-                  className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-90"
+                  className="w-11 h-11 md:w-10 md:h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-90"
                 >
                   <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
@@ -806,7 +871,7 @@ const PlayerModal = ({ song, onClose }) => {
               <div className="w-full grid grid-cols-2 gap-2 mt-1 md:mt-2">
                 <button
                   onClick={toggleMetronome}
-                  className={`py-2.5 md:py-3 rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest transition-all px-3 md:px-4 ${
+                  className={`py-2.5 md:py-3 rounded-xl text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all px-3 md:px-4 ${
                     isPlaying
                       ? 'bg-red-500/10 text-red-500 border border-red-500/20 shadow-inner'
                       : 'bg-primary text-black hover:bg-primary-hover shadow-lg shadow-primary/20'
@@ -818,7 +883,7 @@ const PlayerModal = ({ song, onClose }) => {
                   <select
                     value={timeSignature}
                     onChange={(e) => setTimeSignature(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 text-[9px] md:text-[11px] font-black rounded-xl px-2 py-2.5 md:py-3 text-white focus:outline-none focus:border-primary/50 cursor-pointer appearance-none text-center hover:bg-white/10 transition-all font-inter"
+                    className="w-full bg-white/5 border border-white/10 text-[10px] md:text-[11px] font-black rounded-xl px-2 py-2.5 md:py-3 text-white focus:outline-none focus:border-primary/50 cursor-pointer appearance-none text-center hover:bg-white/10 transition-all font-inter"
                   >
                     <option value="4/4" className="bg-[#1a1a1a]">
                       4/4
@@ -839,7 +904,7 @@ const PlayerModal = ({ song, onClose }) => {
 
             {song.notes && (
               <div className="bg-primary/5 border border-primary/10 p-5 md:p-6 rounded-sub">
-                <p className="text-[9px] md:text-[10px] font-bold text-primary uppercase tracking-widest mb-2 md:mb-3">
+                <p className="text-[10px] md:text-[11px] font-bold text-primary uppercase tracking-widest mb-2 md:mb-3">
                   Notas del autor
                 </p>
                 <p className="text-xs md:text-sm text-gray-300 leading-relaxed italic">
@@ -891,21 +956,50 @@ const PlayerModal = ({ song, onClose }) => {
               </h4>
               <button
                 onClick={() => setShowChords(!showChords)}
-                className={`px-3 py-1 rounded-full text-[9px] font-bold border transition-all ${showChords ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-white/5 border-white/10 text-gray-400'}`}
+                className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${showChords ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-white/5 border-white/10 text-gray-400'}`}
               >
                 {showChords ? 'Con Acordes' : 'Solo Letra'}
               </button>
             </div>
             <div className="flex items-center space-x-2 md:space-x-3">
+              {/* Zoom de letra (uso en escenario): A− / A+ persistidos */}
+              <div className="flex items-center rounded-full border border-white/10 bg-white/5 overflow-hidden">
+                <button
+                  onClick={() => changeLyricSize(-2)}
+                  disabled={lyricSize <= LYRIC_SIZE_MIN}
+                  className="px-3 py-2 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-[11px] font-black disabled:opacity-30"
+                  title="Letra más pequeña"
+                  aria-label="Reducir tamaño de letra"
+                >
+                  A−
+                </button>
+                <button
+                  onClick={() => changeLyricSize(2)}
+                  disabled={lyricSize >= LYRIC_SIZE_MAX}
+                  className="px-3 py-2 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-[13px] font-black border-l border-white/10 disabled:opacity-30"
+                  title="Letra más grande"
+                  aria-label="Aumentar tamaño de letra"
+                >
+                  A+
+                </button>
+              </div>
               <button
-                onClick={() => {
-                  const temp = document.createElement('textarea');
-                  temp.value = transposedLyrics.replace(/<[^>]*>/g, '').replace(/\[[^\]]*\]/g, '');
-                  document.body.appendChild(temp);
-                  temp.select();
-                  document.execCommand('copy');
-                  document.body.removeChild(temp);
-                  alert('Letra copiada al portapapeles (sin acordes)');
+                onClick={async () => {
+                  const clean = transposedLyrics
+                    .replace(/<[^>]*>/g, '')
+                    .replace(/\[[^\]]*\]/g, '');
+                  try {
+                    await navigator.clipboard.writeText(clean);
+                  } catch (e) {
+                    // Fallback para contextos sin Clipboard API
+                    const temp = document.createElement('textarea');
+                    temp.value = clean;
+                    document.body.appendChild(temp);
+                    temp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(temp);
+                  }
+                  showToast('Letra copiada al portapapeles (sin acordes)');
                 }}
                 className="p-2 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all text-gray-400 hover:text-white"
                 title="Copiar letra limpia"
@@ -919,7 +1013,7 @@ const PlayerModal = ({ song, onClose }) => {
               </button>
               <button
                 onClick={downloadImage}
-                className="px-3 md:px-4 py-1.5 md:py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-full border border-primary/20 transition-all text-[8px] md:text-[10px] font-bold uppercase tracking-widest flex items-center space-x-2"
+                className="px-3 md:px-4 py-1.5 md:py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-full border border-primary/20 transition-all text-[10px] md:text-[11px] font-bold uppercase tracking-widest flex items-center space-x-2"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
@@ -928,7 +1022,7 @@ const PlayerModal = ({ song, onClose }) => {
               </button>
               <button
                 onClick={() => window.print()}
-                className="px-3 md:px-4 py-1.5 md:py-2 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all text-[8px] md:text-[10px] font-bold uppercase tracking-widest"
+                className="px-3 md:px-4 py-1.5 md:py-2 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all text-[10px] md:text-[11px] font-bold uppercase tracking-widest"
               >
                 Imprimir / PDF
               </button>
@@ -946,7 +1040,7 @@ const PlayerModal = ({ song, onClose }) => {
               </p>
             </div>
             <div className="rich-text-content text-gray-300 break-words max-w-full">
-              {renderLyrics()}
+              {renderedLyrics}
             </div>
           </div>
         </div>
