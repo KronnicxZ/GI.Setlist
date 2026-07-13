@@ -51,10 +51,16 @@ const SingersApp = () => {
   }, [songs, activeSetlist, query]);
 
   return (
-    <div className="min-h-screen bg-main text-white flex flex-col">
+    // App-shell con scroll PROPIO: html/body llevan overflow hidden global (la
+    // app principal scrollea por paneles), así que el <main> de abajo es el
+    // contenedor scrolleable — sin esto la lista no se podía desplazar.
+    <div
+      className="bg-main text-white flex flex-col overflow-hidden h-screen"
+      style={{ height: '100dvh' }}
+    >
       {/* Header fijo, pensado para el móvil de un cantante */}
       <header
-        className="sticky top-0 z-40 bg-main/95 backdrop-blur-md border-b border-white/5 px-4 pb-3"
+        className="shrink-0 z-40 bg-main/95 border-b border-white/5 px-4 pb-3"
         style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
       >
         <div className="flex items-center justify-between mb-3 max-w-3xl mx-auto w-full">
@@ -109,9 +115,10 @@ const SingersApp = () => {
 
       {/* Lista de canciones — filas grandes, un toque abre la letra */}
       <main
-        className="flex-1 w-full max-w-3xl mx-auto px-4 py-4 space-y-2"
+        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar w-full px-4 py-4"
         style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
       >
+        <div className="max-w-3xl mx-auto space-y-2">
         {loading ? (
           <div className="space-y-2" aria-hidden="true">
             {[...Array(8)].map((_, i) => (
@@ -183,6 +190,7 @@ const SingersApp = () => {
             );
           })
         )}
+        </div>
       </main>
 
       {selected && (
