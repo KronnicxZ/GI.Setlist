@@ -1,11 +1,11 @@
 {
-    "name": "gi_setlist",
-    "short_name": "gi_setlist",
+    "name": "GI App",
+    "short_name": "GI App",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0A0A0C",
+    "theme_color": "#0A0A0C",
+    "description": "GI App: servicios, equipo y repertorio de Generación Indetenible.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
