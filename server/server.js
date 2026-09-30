@@ -79,6 +79,51 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // ── YouTube Proxy ─────────────────────────────────────────────────────────
+// ── Proxies para la app GI Setlist v2 en navegador ───────────────────────────
+// El <audio> del navegador exige CORS al bucket R2 y las webs de acordes no
+// permiten lectura cross-origin; la app nativa (APK) no pasa por aquí.
+const R2_HOST = /\.r2\.cloudflarestorage\.com$/;
+app.get('/api/r2', async (req, res) => {
+  let target;
+  try { target = new URL(String(req.query.u || '')); } catch (_) { return res.status(400).json({ error: 'URL inválida' }); }
+  if (target.protocol !== 'https:' || !R2_HOST.test(target.hostname)) return res.status(403).json({ error: 'Host no permitido' });
+  try {
+    const up = await axios.get(target.toString(), {
+      responseType: 'stream', timeout: 60000, validateStatus: () => true,
+      headers: req.headers.range ? { Range: req.headers.range } : {},
+    });
+    res.status(up.status);
+    for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges', 'last-modified', 'etag']) {
+      if (up.headers[h]) res.setHeader(h, up.headers[h]);
+    }
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    up.data.pipe(res);
+  } catch (e) {
+    res.status(502).json({ error: 'Proxy: ' + e.message });
+  }
+});
+
+app.get('/api/fetch', async (req, res) => {
+  let target;
+  try { target = new URL(String(req.query.u || '')); } catch (_) { return res.status(400).json({ error: 'URL inválida' }); }
+  if (!/^https?:$/.test(target.protocol)) return res.status(400).json({ error: 'Esquema no permitido' });
+  try {
+    const up = await axios.get(target.toString(), {
+      responseType: 'text', timeout: 20000, maxContentLength: 3 * 1024 * 1024, validateStatus: () => true,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'es-ES,es;q=0.9',
+      },
+    });
+    res.status(up.status).setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(up.data);
+  } catch (e) {
+    res.status(502).json({ error: 'Proxy: ' + e.message });
+  }
+});
+
 app.get('/api/youtube/details', async (req, res) => {
   const { videoId } = req.query;
   const apiKey = process.env.YOUTUBE_API_KEY;

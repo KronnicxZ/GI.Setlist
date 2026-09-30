@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GI Setlist · Únete al equipo</title>
+<meta name="description" content="Instala GI Setlist y únete a tu equipo de alabanza: servicios, roles, setlist y letras con acordes.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="/favicon.png">
+<meta property="og:title" content="GI Setlist · Únete al equipo">
+<meta property="og:description" content="Servicios, equipo, música y cursos para tu ministerio.">
+<meta property="og:image" content="/icon-512.png">
+<style>
+  :root { --bg:#0a0a0a; --card:#161616; --border:rgba(255,255,255,.08); --text:#fff; --muted:#a3a3a3; --dim:#6b6b6b; --amber:#fbae00; --green:#4ade80; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:460px; margin:0 auto; padding:max(28px, env(safe-area-inset-top)) 20px 48px; min-height:100vh; display:flex; flex-direction:column; }
+  .logo { width:84px; height:84px; margin:18px auto 14px; display:block; }
+  h1 { font-size:28px; font-weight:800; letter-spacing:-.8px; margin:0; text-align:center; line-height:1.15; }
+  h1 b { color:var(--amber); font-weight:800; }
+  .sub { color:var(--muted); text-align:center; margin:10px 0 24px; line-height:1.45; font-size:15px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:22px; padding:20px; margin-bottom:14px; }
+  .eyebrow { font-size:10.5px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; color:var(--amber); margin-bottom:8px; }
+  .card h2 { font-size:18px; margin:0 0 6px; font-weight:800; letter-spacing:-.3px; }
+  .card p { color:var(--muted); margin:0 0 14px; font-size:14px; line-height:1.45; }
+  .btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px 18px; border-radius:16px; font-weight:800; font-size:15.5px; text-decoration:none; border:1px solid transparent; cursor:pointer; transition:transform .12s ease; }
+  .btn:active { transform:scale(.98); }
+  .btn.primary { background:var(--amber); color:#111; }
+  .btn.ghost { background:rgba(255,255,255,.05); color:#fff; border-color:rgba(255,255,255,.12); margin-top:8px; }
+  .btn svg { width:20px; height:20px; flex-shrink:0; }
+  .steps { margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:1.6; }
+  .steps li::marker { color:var(--amber); font-weight:800; }
+  .note { color:var(--dim); font-size:12px; text-align:center; margin-top:18px; line-height:1.5; }
+  .pill { display:inline-flex; align-items:center; gap:6px; background:rgba(74,222,128,.12); color:var(--green); border-radius:999px; padding:5px 11px; font-size:12px; font-weight:800; margin-bottom:12px; }
+  .hidden { display:none !important; }
+  .spacer { flex:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img class="logo" src="/gi-logo.png" alt="GI Setlist">
+  <h1>Te invitaron a <b>GI Setlist</b></h1>
+  <p class="sub">La app del equipo de alabanza: servicios, tu rol, el setlist y las letras con acordes, todo en tu teléfono.</p>
+
+  <div id="tokenPill" class="pill hidden">✓ Invitación detectada · entrarás directo a tu iglesia</div>
+
+  <!-- Android -->
+  <section class="card" id="android">
+    <div class="eyebrow">Android</div>
+    <h2>Instala la app</h2>
+    <p>Si ya la tienes, se abrirá sola con tu invitación. Si no, descárgala e instálala (Android te pedirá permitir la instalación desde el navegador).</p>
+    <a class="btn primary" id="openAndroid" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      Abrir en la app
+    </a>
+    <a class="btn ghost" id="apk" href="https://github.com/KronnicxZ/GI.Setlist/releases/latest/download/GI-Setlist.apk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descargar APK para Android
+    </a>
+    <ol class="steps" style="margin-top:14px">
+      <li>Descarga e instala el APK.</li>
+      <li>Abre la app y crea tu cuenta (o entra con Google).</li>
+      <li>Vuelve a tocar el enlace de la invitación: entras directo a la iglesia.</li>
+    </ol>
+  </section>
+
+  <!-- iPhone -->
+  <section class="card" id="ios">
+    <div class="eyebrow">iPhone · iPad</div>
+    <h2>Usa la app desde Safari</h2>
+    <p>Mientras la versión para App Store está en camino, la app funciona completa en el navegador. Ábrela y agrégala a la pantalla de inicio: se verá y sentirá como una app.</p>
+    <a class="btn primary" id="openWeb" href="/app/web/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      Abrir GI Setlist
+    </a>
+    <ol class="steps" style="margin-top:14px">
+      <li>Toca el botón <b>Compartir</b> de Safari.</li>
+      <li>Elige <b>Agregar a pantalla de inicio</b>.</li>
+      <li>Ábrela desde el icono, como cualquier app.</li>
+    </ol>
+  </section>
+
+  <!-- Computadora -->
+  <section class="card" id="desktop">
+    <div class="eyebrow">Computadora</div>
+    <h2>Versión web</h2>
+    <p>Todo el panel del equipo en tu navegador: ideal para armar servicios y cargar canciones.</p>
+    <a class="btn primary" id="openWebDesktop" href="/app/web/">Abrir GI Setlist en el navegador</a>
+  </section>
+
+  <div class="spacer"></div>
+  <p class="note">GI Setlist · Generación Indetenible. Los enlaces de invitación valen 30 días y sirven para varias personas.</p>
+</div>
+<script>
+(function () {
+  var qs = new URLSearchParams(location.search);
+  var token = qs.get('join') || '';
+  var ua = navigator.userAgent || '';
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var webUrl = '/app/web/' + (token ? '?join=' + encodeURIComponent(token) : '');
+  var apkUrl = document.getElementById('apk').href;
+
+  if (token) document.getElementById('tokenPill').classList.remove('hidden');
+  document.getElementById('openWeb').href = webUrl;
+  document.getElementById('openWebDesktop').href = webUrl;
+
+  // Android: intent:// abre la app si está instalada (esquema gisetlist://join/TOKEN);
+  // si no lo está, Chrome sigue a la URL de respaldo (descarga del APK).
+  var intent = 'intent://join/' + encodeURIComponent(token || 'open') +
+    '#Intent;scheme=gisetlist;package=com.generacionindetenible.gi_setlist;' +
+    'S.browser_fallback_url=' + encodeURIComponent(apkUrl) + ';end';
+  document.getElementById('openAndroid').href = intent;
+
+  // Mostrar primero la sección del dispositivo actual.
+  var order = isAndroid ? ['android', 'ios', 'desktop'] : isIOS ? ['ios', 'android', 'desktop'] : ['desktop', 'android', 'ios'];
+  var wrap = document.querySelector('.wrap');
+  var anchor = document.querySelector('.spacer');
+  order.forEach(function (id) { wrap.insertBefore(document.getElementById(id), anchor); });
+  if (isAndroid && token) {
+    // Intento automático de abrir la app (si no está instalada, el usuario ve el botón de descarga).
+    setTimeout(function () { location.href = intent; }, 600);
+  }
+})();
+</script>
+</body>
+</html>
