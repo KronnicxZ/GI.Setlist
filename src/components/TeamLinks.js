@@ -20,6 +20,41 @@ const LINKS = [
   },
 ];
 
+// Acceso a la página de la app nueva (GI App): qué trae, descarga para Android y versión web.
+const GI_APP = {
+  href: '/gi-app/',
+  label: 'GI App',
+  sub: 'Nueva app · Android y web',
+  // Teléfono
+  icon: 'M17,19H7V5H17M17,1H7C5.89,1 5,1.89 5,3V21A2,2 0 0,0 7,23H17A2,2 0 0,0 19,21V3C19,1.89 18.1,1 17,1Z',
+};
+
+export function GiAppLinkSidebar({ collapsed }) {
+  return (
+    <a
+      href={GI_APP.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={collapsed ? GI_APP.label : ''}
+      className={`flex items-center ${collapsed ? 'justify-center py-2' : 'space-x-3 px-4 py-3 rounded-sub hover:bg-white/[0.03]'} text-gray-400 hover:text-primary w-full transition-all group`}
+    >
+      <div
+        className={`${collapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg bg-primary/10 flex-shrink-0 flex items-center justify-center group-hover:bg-primary/20 transition-colors`}
+      >
+        <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24">
+          <path fill="currentColor" d={GI_APP.icon} />
+        </svg>
+      </div>
+      {!collapsed && (
+        <div className="flex flex-col min-w-0">
+          <span className="font-medium leading-tight">{GI_APP.label}</span>
+          <span className="text-[10px] text-gray-500 tracking-wide">{GI_APP.sub}</span>
+        </div>
+      )}
+    </a>
+  );
+}
+
 // Variante barra lateral (desktop): fila con icono + textos; en modo colapsado,
 // solo el icono centrado.
 export function TeamLinksSidebar({ collapsed }) {
@@ -71,6 +106,17 @@ export function TeamLinksPills() {
           {l.label}
         </a>
       ))}
+      <a
+        href={GI_APP.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-[11px] font-bold active:bg-primary/20 active:scale-95 transition-transform"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24">
+          <path fill="currentColor" d={GI_APP.icon} />
+        </svg>
+        {GI_APP.label}
+      </a>
     </div>
   );
 }

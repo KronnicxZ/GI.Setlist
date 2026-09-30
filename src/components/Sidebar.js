@@ -1,6 +1,6 @@
 import React from 'react';
 import BibleVerse from './BibleVerse';
-import { TeamLinksSidebar } from './TeamLinks';
+import { TeamLinksSidebar, GiAppLinkSidebar } from './TeamLinks';
 
 const Sidebar = ({
   isSidebarCollapsed,
@@ -275,6 +275,15 @@ const Sidebar = ({
                 </h2>
               )}
               <TeamLinksSidebar collapsed={isSidebarCollapsed} />
+            </div>
+
+            <div>
+              {!isSidebarCollapsed && (
+                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4 px-4 mt-6">
+                  Nueva app
+                </h2>
+              )}
+              <GiAppLinkSidebar collapsed={isSidebarCollapsed} />
             </div>
           </nav>
 
