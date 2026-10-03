@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GI App · Actualizar</title>
+<meta name="description" content="Ya tenías GI Setlist: instala la nueva GI App encima, sin perder tus datos.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="/favicon.png">
+<meta property="og:title" content="GI App · Actualiza tu app">
+<meta property="og:description" content="Descarga la nueva versión: servicios, equipo, música y Cabina en una sola app.">
+<meta property="og:image" content="/icon-512.png">
+<style>
+  :root { --bg:#0a0a0a; --card:#161616; --border:rgba(255,255,255,.08); --text:#fff; --muted:#a3a3a3; --dim:#6b6b6b; --amber:#fbae00; --green:#4ade80; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:460px; margin:0 auto; padding:max(28px, env(safe-area-inset-top)) 20px 48px; min-height:100vh; display:flex; flex-direction:column; }
+  .logo { width:84px; height:84px; margin:18px auto 14px; display:block; }
+  h1 { font-size:28px; font-weight:600; letter-spacing:-.8px; margin:0; text-align:center; line-height:1.15; }
+  h1 b { color:var(--amber); font-weight:600; }
+  .sub { color:var(--muted); text-align:center; margin:10px 0 24px; line-height:1.45; font-size:15px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:22px; padding:20px; margin-bottom:14px; }
+  .eyebrow { font-size:12.5px; font-weight:600; color:var(--amber); margin-bottom:8px; }
+  .card h2 { font-size:18px; margin:0 0 6px; font-weight:600; letter-spacing:-.3px; }
+  .card p { color:var(--muted); margin:0 0 14px; font-size:14px; line-height:1.45; }
+  .btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:15px 18px; border-radius:16px; font-weight:600; font-size:15.5px; text-decoration:none; border:1px solid transparent; }
+  .btn:active { transform:scale(.98); }
+  .btn.primary { background:var(--amber); color:#111; }
+  .btn svg { width:20px; height:20px; flex-shrink:0; }
+  .steps { margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:1.6; }
+  .steps li::marker { color:var(--amber); font-weight:600; }
+  .keep { display:flex; gap:10px; align-items:flex-start; background:rgba(74,222,128,.08); border:1px solid rgba(74,222,128,.2); border-radius:16px; padding:13px 14px; margin-bottom:14px; color:var(--green); font-size:13.5px; line-height:1.45; }
+  .keep b { font-weight:600; }
+  .new { margin:0; padding:0; list-style:none; color:var(--muted); font-size:14px; line-height:1.7; }
+  .new li::before { content:"•"; color:var(--amber); margin-right:8px; }
+  .note { color:var(--dim); font-size:12px; text-align:center; margin-top:18px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img class="logo" src="/gi-logo.png" alt="GI App">
+  <h1>Actualiza a la nueva <b>GI App</b></h1>
+  <p class="sub">GI Setlist ahora es GI App: más ordenada, con la Cabina de pads y batería, y todo en una sola app.</p>
+
+  <div class="keep">
+    <span>✓</span>
+    <span><b>No pierdes nada.</b> Se instala encima de la que ya tienes: tu sesión, tu iglesia y tus servicios siguen ahí.</span>
+  </div>
+
+  <section class="card">
+    <div class="eyebrow">Android</div>
+    <h2>Descarga la última versión</h2>
+    <p>Toca el botón, abre el archivo descargado y acepta "Instalar" / "Actualizar".</p>
+    <a class="btn primary" href="https://github.com/KronnicxZ/GI.Setlist/releases/latest/download/GI-Setlist.apk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descargar GI App (APK)
+    </a>
+    <ol class="steps" style="margin-top:14px">
+      <li>Si Android avisa de "origen desconocido", permite instalar desde tu navegador.</li>
+      <li>Pulsa <b>Instalar</b> (o <b>Actualizar</b>).</li>
+      <li>Abre GI App: entras directo con tu cuenta de siempre.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <div class="eyebrow">Qué hay de nuevo</div>
+    <ul class="new">
+      <li>Diseño más ligero y fácil de usar</li>
+      <li>Cabina: pads, batería, click y secuencias en vivo</li>
+      <li>Descarga el audio para usar sin internet</li>
+      <li>El programa del servicio se guarda solo al reordenar</li>
+      <li>Versión web para el navegador de tu computadora</li>
+    </ul>
+  </section>
+
+  <p class="note">¿Estás en computadora? Usa la versión web:<br><a href="/app/web/" style="color:var(--amber)">gi-setlist.vercel.app/app/web</a></p>
+</div>
+</body>
+</html>
