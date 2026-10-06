@@ -22,8 +22,15 @@
   (function () {
     var q = new URLSearchParams(location.search);
     var v = q.get('v') || '';
+    var list = q.get('list') || '';
     var f = document.getElementById('f');
     function post(t) { try { Flutter.postMessage(t); } catch (e) {} }
+    if (/^[A-Za-z0-9_-]{10,64}$/.test(list) && !v) {
+      // Lista de reproducción completa (cursos en serie).
+      f.onload = function () { post('loaded'); };
+      f.src = 'https://www.youtube.com/embed/videoseries?list=' + list + '&playsinline=1&rel=0&iv_load_policy=3&origin=' + encodeURIComponent(location.origin);
+      return;
+    }
     if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
       f.style.display = 'none';
       document.getElementById('m').style.display = 'flex';
