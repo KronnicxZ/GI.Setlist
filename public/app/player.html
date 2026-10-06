@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Video</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: #bbb; font: 14px system-ui, sans-serif; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+<!-- Reproductor de las lecciones de GI App. Se abre desde la app dentro de un WebView: al cargarse desde una
+     dirección web real, YouTube recibe un origen válido y permite incrustar el video. -->
+<iframe id="f" title="Video" referrerpolicy="strict-origin-when-cross-origin"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+  allowfullscreen></iframe>
+<div class="msg" id="m">Video no válido</div>
+<script>
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var v = q.get('v') || '';
+    var f = document.getElementById('f');
+    function post(t) { try { Flutter.postMessage(t); } catch (e) {} }
+    if (!/^[A-Za-z0-9_-]{11}$/.test(v)) {
+      f.style.display = 'none';
+      document.getElementById('m').style.display = 'flex';
+      post('invalid');
+      return;
+    }
+    var start = parseInt(q.get('t') || '0', 10) || 0;
+    f.onload = function () { post('loaded'); };
+    f.src = 'https://www.youtube.com/embed/' + v +
+      '?playsinline=1&rel=0&iv_load_policy=3&enablejsapi=1&origin=' + encodeURIComponent(location.origin) +
+      (start ? '&start=' + start : '');
+  })();
+</script>
+</body>
+</html>
