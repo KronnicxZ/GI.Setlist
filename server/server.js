@@ -110,24 +110,32 @@ app.get('/api/fetch', async (req, res) => {
   if (!/^https?:$/.test(target.protocol)) return res.status(400).json({ error: 'Esquema no permitido' });
   try {
     const up = await axios.get(target.toString(), {
-      // Binario para no dañar PDFs; el texto se decodifica como UTF-8 igual que antes.
-      responseType: 'arraybuffer', timeout: 20000, maxContentLength: 4 * 1024 * 1024, validateStatus: () => true,
+      // Se recibe como flujo: los PDF pasan tal cual (en streaming, sin límite de tamaño); el texto se junta y se
+      // decodifica como UTF-8 igual que antes.
+      responseType: 'stream', timeout: 20000, validateStatus: () => true,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36',
         Accept: 'text/html,application/xhtml+xml,application/pdf;q=0.9,*/*;q=0.8', 'Accept-Language': 'es-ES,es;q=0.9',
       },
     });
     const ct = String(up.headers['content-type'] || '');
-    const buf = Buffer.from(up.data);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    const isPdf = /pdf/i.test(ct) || buf.subarray(0, 4).toString('latin1') === '%PDF';
+    const isPdf = /pdf/i.test(ct) || /\.pdf(\?|$)/i.test(target.pathname);
     if (isPdf || /^(image|audio|video|application\/(octet-stream|zip))/i.test(ct)) {
       res.status(up.status).setHeader('Content-Type', isPdf ? 'application/pdf' : ct);
+      if (up.headers['content-length']) res.setHeader('Content-Length', up.headers['content-length']);
       res.setHeader('Cache-Control', 'private, max-age=3600');
-      return res.send(buf);
+      return up.data.pipe(res);
+    }
+    const chunks = [];
+    let size = 0;
+    for await (const c of up.data) {
+      size += c.length;
+      if (size > 3 * 1024 * 1024) { up.data.destroy(); return res.status(413).json({ error: 'Página demasiado grande' }); }
+      chunks.push(c);
     }
     res.status(up.status).setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(buf.toString('utf8'));
+    res.send(Buffer.concat(chunks).toString('utf8'));
   } catch (e) {
     res.status(502).json({ error: 'Proxy: ' + e.message });
   }
