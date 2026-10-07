@@ -110,15 +110,24 @@ app.get('/api/fetch', async (req, res) => {
   if (!/^https?:$/.test(target.protocol)) return res.status(400).json({ error: 'Esquema no permitido' });
   try {
     const up = await axios.get(target.toString(), {
-      responseType: 'text', timeout: 20000, maxContentLength: 3 * 1024 * 1024, validateStatus: () => true,
+      // Binario para no dañar PDFs; el texto se decodifica como UTF-8 igual que antes.
+      responseType: 'arraybuffer', timeout: 20000, maxContentLength: 4 * 1024 * 1024, validateStatus: () => true,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36',
-        Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'es-ES,es;q=0.9',
+        Accept: 'text/html,application/xhtml+xml,application/pdf;q=0.9,*/*;q=0.8', 'Accept-Language': 'es-ES,es;q=0.9',
       },
     });
-    res.status(up.status).setHeader('Content-Type', 'text/html; charset=utf-8');
+    const ct = String(up.headers['content-type'] || '');
+    const buf = Buffer.from(up.data);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.send(up.data);
+    const isPdf = /pdf/i.test(ct) || buf.subarray(0, 4).toString('latin1') === '%PDF';
+    if (isPdf || /^(image|audio|video|application\/(octet-stream|zip))/i.test(ct)) {
+      res.status(up.status).setHeader('Content-Type', isPdf ? 'application/pdf' : ct);
+      res.setHeader('Cache-Control', 'private, max-age=3600');
+      return res.send(buf);
+    }
+    res.status(up.status).setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(buf.toString('utf8'));
   } catch (e) {
     res.status(502).json({ error: 'Proxy: ' + e.message });
   }

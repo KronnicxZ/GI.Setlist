@@ -1,0 +1,3 @@
+Guitarra acústica: University of Iowa Electronic Music Studios (Musical Instrument Samples),
+editadas y publicadas por el proyecto tonejs-instruments (Nicholaus Brosowsky) bajo CC BY 3.0.
+https://github.com/nbrosowsky/tonejs-instruments

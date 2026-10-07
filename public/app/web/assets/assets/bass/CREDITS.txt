@@ -1,0 +1,2 @@
+Bajo eléctrico: Versilian Community Sample Library (VCSL), Versilian Studios, CC0 1.0 (dominio público),
+subconjunto de tonejs-instruments. El mismo que usa LivePads.

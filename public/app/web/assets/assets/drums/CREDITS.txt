@@ -1,0 +1,5 @@
+Sonidos de batería: «99 Drum Samples» y «99 Drum Samples II» de 99Sounds (99sounds.org), los mismos que usa LivePads.
+Licencia: uso libre, comercial y no comercial, siempre que no se redistribuyan como librería de samples
+o instrumento virtual.
+kick.wav, snare.wav, hihat.wav y stick.wav (ejercicios de ritmo) son versiones mono de kick-acoustic01,
+snare-acoustic01, hihat-acoustic01 y perc-short.
