@@ -24,7 +24,11 @@
     var v = q.get('v') || '';
     var list = q.get('list') || '';
     var f = document.getElementById('f');
-    function post(t) { try { Flutter.postMessage(t); } catch (e) {} }
+    // Android: canal «Flutter» del WebView. Web: la página va en un iframe y avisa a la app con postMessage.
+    function post(t) {
+      if (window.Flutter && Flutter.postMessage) { try { Flutter.postMessage(t); } catch (e) {} return; }
+      try { if (window.parent !== window) window.parent.postMessage('gi:' + t, '*'); } catch (e) {}
+    }
     if (/^[A-Za-z0-9_-]{10,64}$/.test(list) && !v) {
       // Lista de reproducción completa (cursos en serie).
       f.onload = function () { post('loaded'); };
@@ -38,6 +42,43 @@
       return;
     }
     var start = parseInt(q.get('t') || '0', 10) || 0;
+    if (q.get('api') === '1') {
+      // Modo sincronizado (detector de acordes de GI App): la app recibe el tiempo del video cada 200 ms
+      // ({"t":segundo,"s":estado,"d":duración}) y lo controla con gi('play'|'pause'|'seek', segundos).
+      var player = null;
+      window.gi = function (cmd, v) {
+        if (!player || !player.playVideo) return;
+        if (cmd === 'play') player.playVideo();
+        else if (cmd === 'pause') player.pauseVideo();
+        else if (cmd === 'seek') player.seekTo(Number(v) || 0, true);
+        else if (cmd === 'volume') player.setVolume(Math.max(0, Math.min(100, Number(v) || 0)));
+      };
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || typeof e.data !== 'string' || e.data.indexOf('gi-cmd:') !== 0) return;
+        var p = e.data.split(':');
+        window.gi(p[1], parseFloat(p[2]));
+      });
+      window.onYouTubeIframeAPIReady = function () {
+        window.__gi = 'api';
+        player = new YT.Player('f', {
+          events: {
+            onReady: function () {
+              window.__gi = 'ready';
+              post('loaded');
+              setInterval(function () {
+                try { post(JSON.stringify({ t: player.getCurrentTime() || 0, s: player.getPlayerState(), d: player.getDuration() || 0 })); } catch (e) {}
+              }, 200);
+            },
+            onError: function (e) { post(JSON.stringify({ err: e && e.data })); }
+          }
+        });
+      };
+      f.src = 'https://www.youtube.com/embed/' + v + '?playsinline=1&rel=0&iv_load_policy=3&controls=1&enablejsapi=1&origin=' + encodeURIComponent(location.origin);
+      var tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+      return;
+    }
     f.onload = function () { post('loaded'); };
     f.src = 'https://www.youtube.com/embed/' + v +
       '?playsinline=1&rel=0&iv_load_policy=3&enablejsapi=1&origin=' + encodeURIComponent(location.origin) +

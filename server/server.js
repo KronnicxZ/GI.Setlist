@@ -180,6 +180,63 @@ app.post('/api/gi/reorder', async (req, res) => {
   }
 });
 
+// ── GI App: acordes detectados de videos de YouTube ─────────────────────────
+// La app escanea el video escuchándolo (reproductor oficial + micrófono) y guarda aquí el resultado para que el
+// resto del equipo no tenga que volver a escanearlo. Se guarda como JSON en Supabase Storage (bucket privado
+// «gi-chords», se crea solo). Solo usuarios con sesión; un escaneo más completo nunca se reemplaza por uno parcial.
+const CHORD_BUCKET = 'gi-chords';
+const YT_ID = /^[A-Za-z0-9_-]{11}$/;
+async function sessionUser(req) {
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return null;
+  const { data, error } = await db.supabase.auth.getUser(token);
+  return error || !data || !data.user ? null : data.user;
+}
+async function readChords(vid) {
+  const { data, error } = await db.supabase.storage.from(CHORD_BUCKET).download(`yt/${vid}.json`);
+  if (error || !data) return null;
+  try { return JSON.parse(Buffer.from(await data.arrayBuffer()).toString('utf8')); } catch (_) { return null; }
+}
+app.get('/api/gi/chords/:vid', async (req, res) => {
+  try {
+    const vid = req.params.vid;
+    if (!YT_ID.test(vid)) return res.status(400).json({ error: 'Video no válido' });
+    if (!(await sessionUser(req))) return res.status(401).json({ error: 'Inicia sesión para ver los acordes guardados' });
+    const doc = await readChords(vid);
+    if (!doc) return res.status(404).json({ error: 'Este video aún no tiene acordes' });
+    res.json(doc);
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudieron leer los acordes: ' + (e.message || e) });
+  }
+});
+app.post('/api/gi/chords/:vid', async (req, res) => {
+  try {
+    const vid = req.params.vid;
+    if (!YT_ID.test(vid)) return res.status(400).json({ error: 'Video no válido' });
+    const user = await sessionUser(req);
+    if (!user) return res.status(401).json({ error: 'Inicia sesión para guardar los acordes' });
+    const { analysis, coverage, title } = req.body || {};
+    const cov = Math.max(0, Math.min(1, Number(coverage) || 0));
+    if (!analysis || typeof analysis !== 'object' || !Array.isArray(analysis.seg) || !Array.isArray(analysis.beats) || !(Number(analysis.d) > 0)) {
+      return res.status(400).json({ error: 'Datos de acordes incompletos' });
+    }
+    const body = JSON.stringify({ v: 1, coverage: cov, title: String(title || '').slice(0, 200), by: user.id, at: new Date().toISOString(), a: analysis });
+    if (body.length > 600000) return res.status(413).json({ error: 'Demasiado grande' });
+    const old = await readChords(vid);
+    if (old && Number(old.coverage) > cov + 0.05) return res.json({ ok: true, kept: true, coverage: old.coverage });
+    const up = () => db.supabase.storage.from(CHORD_BUCKET).upload(`yt/${vid}.json`, Buffer.from(body, 'utf8'), { contentType: 'application/json', upsert: true });
+    let { error } = await up();
+    if (error && /not.?found/i.test(error.message || '')) {
+      await db.supabase.storage.createBucket(CHORD_BUCKET, { public: false });
+      ({ error } = await up());
+    }
+    if (error) throw error;
+    res.json({ ok: true, coverage: cov });
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudieron guardar los acordes: ' + (e.message || e) });
+  }
+});
+
 app.get('/api/youtube/details', async (req, res) => {
   const { videoId } = req.query;
   const apiKey = process.env.YOUTUBE_API_KEY;
