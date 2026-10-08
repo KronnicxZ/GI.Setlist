@@ -141,6 +141,45 @@ app.get('/api/fetch', async (req, res) => {
   }
 });
 
+// ── GI App: guardar el orden del programa de un servicio ─────────────────────
+// La app manda su token de sesión de Supabase; aquí se comprueba quién es y que pueda editar esa iglesia
+// (dueño o editor) y se guardan TODAS las posiciones con la clave de servidor. Si la persona es la dueña de la
+// iglesia pero le faltaba su fila de miembro (por eso la base de datos rechazaba sus cambios), se repara.
+app.post('/api/gi/reorder', async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    const { serviceId, ids } = req.body || {};
+    if (!token) return res.status(401).json({ error: 'Falta la sesión' });
+    if (!serviceId || !Array.isArray(ids) || ids.some((x) => typeof x !== 'string')) return res.status(400).json({ error: 'Datos incompletos' });
+    const sb = db.supabase;
+    const { data: u, error: ue } = await sb.auth.getUser(token);
+    if (ue || !u || !u.user) return res.status(401).json({ error: 'Sesión vencida: vuelve a iniciar sesión' });
+    const uid = u.user.id;
+    const { data: svc, error: se } = await sb.from('services').select('id, library_id').eq('id', serviceId).maybeSingle();
+    if (se) throw se;
+    if (!svc) return res.status(404).json({ error: 'El servicio ya no existe' });
+    const lib = svc.library_id;
+    const { data: mem } = await sb.from('memberships').select('role').eq('library_id', lib).eq('user_id', uid).maybeSingle();
+    let repaired = false;
+    if (!mem || !['owner', 'editor'].includes(mem.role)) {
+      const { data: l } = await sb.from('libraries').select('owner_id').eq('id', lib).maybeSingle();
+      if (!l || l.owner_id !== uid) return res.status(403).json({ error: 'No tienes permiso para editar este programa (pide rol de editor)' });
+      await sb.from('memberships').upsert({ library_id: lib, user_id: uid, role: 'owner' }, { onConflict: 'library_id,user_id' });
+      repaired = true;
+    }
+    const { data: items, error: ie } = await sb.from('service_items').select('id').eq('service_id', serviceId);
+    if (ie) throw ie;
+    const known = new Set(items.map((i) => i.id));
+    const order = [...ids.filter((id) => known.has(id)), ...items.map((i) => i.id).filter((id) => !ids.includes(id))];
+    const results = await Promise.all(order.map((id, i) => sb.from('service_items').update({ position: i }).eq('id', id)));
+    const bad = results.find((r) => r.error);
+    if (bad) throw bad.error;
+    res.json({ ok: true, order, repaired });
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo guardar el orden: ' + (e.message || e) });
+  }
+});
+
 app.get('/api/youtube/details', async (req, res) => {
   const { videoId } = req.query;
   const apiKey = process.env.YOUTUBE_API_KEY;
