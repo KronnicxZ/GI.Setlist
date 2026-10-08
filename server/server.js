@@ -171,9 +171,12 @@ app.post('/api/gi/reorder', async (req, res) => {
     if (ie) throw ie;
     const known = new Set(items.map((i) => i.id));
     const order = [...ids.filter((id) => known.has(id)), ...items.map((i) => i.id).filter((id) => !ids.includes(id))];
-    const results = await Promise.all(order.map((id, i) => sb.from('service_items').update({ position: i }).eq('id', id)));
+    const results = await Promise.all(order.map((id, i) => sb.from('service_items').update({ position: i }).eq('id', id).select('id')));
     const bad = results.find((r) => r.error);
     if (bad) throw bad.error;
+    // Cada fila debe haberse escrito de verdad (si la clave del servidor no tuviera permisos, no habría error pero sí 0 filas).
+    const missed = results.filter((r) => !r.data || r.data.length === 0).length;
+    if (missed) return res.status(500).json({ error: `El servidor no pudo escribir ${missed} de ${order.length} posiciones` });
     res.json({ ok: true, order, repaired });
   } catch (e) {
     res.status(500).json({ error: 'No se pudo guardar el orden: ' + (e.message || e) });
