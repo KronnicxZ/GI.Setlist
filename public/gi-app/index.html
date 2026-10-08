@@ -201,5 +201,33 @@
       document.getElementById('ver').textContent = j.tag_name.replace(/^v/, '');
     }).catch(function () {});
 </script>
+<script>
+  // El botón de descarga apunta a la última versión publicada QUE TENGA el APK (si la más reciente aún no lo
+  // tiene, «latest/download» daría 404 en GitHub).
+  (function () {
+    var old = 'https://github.com/KronnicxZ/GI.Setlist/releases/latest/download/GI-Setlist.apk';
+    fetch('https://api.github.com/repos/KronnicxZ/GI.Setlist/releases?per_page=10')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (list) {
+        if (!list) return;
+        for (var i = 0; i < list.length; i++) {
+          var rel = list[i];
+          if (rel.draft || rel.prerelease) continue;
+          var a = (rel.assets || []).filter(function (x) { return x.name === 'GI-Setlist.apk'; })[0];
+          if (!a) continue;
+          var url = a.browser_download_url, eo = encodeURIComponent(old);
+          document.querySelectorAll('a').forEach(function (el) {
+            var h = el.getAttribute('href') || '';
+            if (h.indexOf(old) >= 0) h = h.split(old).join(url);
+            if (h.indexOf(eo) >= 0) h = h.split(eo).join(encodeURIComponent(url));
+            el.setAttribute('href', h);
+          });
+          var ver = document.getElementById('ver');
+          if (ver) ver.textContent = rel.tag_name.replace(/^v/, '');
+          return;
+        }
+      }).catch(function () {});
+  })();
+</script>
 </body>
 </html>
