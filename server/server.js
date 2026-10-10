@@ -240,6 +240,62 @@ app.post('/api/gi/chords/:vid', async (req, res) => {
   }
 });
 
+// ── GI App: ranking semanal de ejercicios del equipo ──────────────────────
+// Cada persona comparte su XP de la semana; se guarda por iglesia como JSON en el mismo bucket privado.
+async function isMemberOf(lib, uid) {
+  const { data: m } = await db.supabase.from('memberships').select('role').eq('library_id', lib).eq('user_id', uid).maybeSingle();
+  if (m) return true;
+  const { data: l } = await db.supabase.from('libraries').select('owner_id').eq('id', lib).maybeSingle();
+  return !!(l && l.owner_id === uid);
+}
+async function readBoard(lib) {
+  const { data, error } = await db.supabase.storage.from(CHORD_BUCKET).download(`xp/${lib}.json`);
+  if (error || !data) return { entries: {} };
+  try { return JSON.parse(Buffer.from(await data.arrayBuffer()).toString('utf8')); } catch (_) { return { entries: {} }; }
+}
+const UUID = /^[0-9a-f-]{36}$/i;
+app.get('/api/gi/xp/:lib', async (req, res) => {
+  try {
+    const lib = req.params.lib;
+    if (!UUID.test(lib)) return res.status(400).json({ error: 'Iglesia no válida' });
+    const user = await sessionUser(req);
+    if (!user) return res.status(401).json({ error: 'Inicia sesión' });
+    if (!(await isMemberOf(lib, user.id))) return res.status(403).json({ error: 'No eres parte de esta iglesia' });
+    res.json(await readBoard(lib));
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo leer el ranking: ' + (e.message || e) });
+  }
+});
+app.post('/api/gi/xp/:lib', async (req, res) => {
+  try {
+    const lib = req.params.lib;
+    if (!UUID.test(lib)) return res.status(400).json({ error: 'Iglesia no válida' });
+    const user = await sessionUser(req);
+    if (!user) return res.status(401).json({ error: 'Inicia sesión' });
+    if (!(await isMemberOf(lib, user.id))) return res.status(403).json({ error: 'No eres parte de esta iglesia' });
+    const b = req.body || {};
+    const num = (v, max) => Math.max(0, Math.min(max, Math.round(Number(v) || 0)));
+    const week = /^\d{4}-\d{2}-\d{2}$/.test(String(b.week || '')) ? String(b.week) : '';
+    if (!week) return res.status(400).json({ error: 'Semana no válida' });
+    const { data: p } = await db.supabase.from('profiles').select('display_name, email').eq('id', user.id).maybeSingle();
+    const name = String((p && (p.display_name || (p.email || '').split('@')[0])) || 'Miembro').slice(0, 60);
+    const board = await readBoard(lib);
+    board.entries = board.entries || {};
+    board.entries[user.id] = { name, week, weekXp: num(b.weekXp, 50000), xp: num(b.xp, 10000000), streak: num(b.streak, 10000), at: new Date().toISOString() };
+    const body = Buffer.from(JSON.stringify(board), 'utf8');
+    const up = () => db.supabase.storage.from(CHORD_BUCKET).upload(`xp/${lib}.json`, body, { contentType: 'application/json', upsert: true });
+    let { error } = await up();
+    if (error && /not.?found/i.test(error.message || '')) {
+      await db.supabase.storage.createBucket(CHORD_BUCKET, { public: false });
+      ({ error } = await up());
+    }
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo guardar en el ranking: ' + (e.message || e) });
+  }
+});
+
 app.get('/api/youtube/details', async (req, res) => {
   const { videoId } = req.query;
   const apiKey = process.env.YOUTUBE_API_KEY;
